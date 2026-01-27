@@ -6,13 +6,17 @@ import {
   ResponsiveContainer,
   Tooltip,
   Legend,
+  Sector,
 } from "recharts";
-import { SegmentData } from "@/data/marketData";
+import { SegmentData, YearlyData } from "@/data/marketData";
+import { useState } from "react";
+import { MousePointer2 } from "lucide-react";
 
 interface SegmentPieChartProps {
   data: SegmentData[];
   year: number;
   title: string;
+  onSegmentClick?: (segmentName: string, segmentData: YearlyData[], color: string) => void;
 }
 
 const chartColors = [
@@ -26,10 +30,14 @@ const chartColors = [
   "hsl(60, 70%, 50%)",
 ];
 
-export function SegmentPieChart({ data, year, title }: SegmentPieChartProps) {
-  const pieData = data.map((segment) => ({
+export function SegmentPieChart({ data, year, title, onSegmentClick }: SegmentPieChartProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  const pieData = data.map((segment, index) => ({
     name: segment.name,
     value: segment.data.find((d) => d.year === year)?.value ?? 0,
+    fullData: segment.data,
+    color: chartColors[index % chartColors.length],
   }));
 
   const total = pieData.reduce((sum, item) => sum + item.value, 0);
@@ -55,10 +63,38 @@ export function SegmentPieChart({ data, year, title }: SegmentPieChartProps) {
               </span>
             </p>
           </div>
+          <p className="mt-2 text-xs text-primary flex items-center gap-1">
+            <MousePointer2 className="h-3 w-3" /> Click to drill down
+          </p>
         </div>
       );
     }
     return null;
+  };
+
+  const renderActiveShape = (props: any) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+    return (
+      <g>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 8}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+          style={{ filter: "drop-shadow(0 0 8px rgba(0,0,0,0.3))", cursor: "pointer" }}
+        />
+      </g>
+    );
+  };
+
+  const handlePieClick = (data: any, index: number) => {
+    if (onSegmentClick) {
+      const segment = pieData[index];
+      onSegmentClick(segment.name, segment.fullData, segment.color);
+    }
   };
 
   const renderLegend = (props: any) => {
@@ -66,7 +102,11 @@ export function SegmentPieChart({ data, year, title }: SegmentPieChartProps) {
     return (
       <div className="mt-4 flex flex-wrap justify-center gap-4">
         {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center gap-2">
+          <div
+            key={index}
+            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-secondary/50"
+            onClick={() => handlePieClick(entry, index)}
+          >
             <div
               className="h-3 w-3 rounded-full"
               style={{ backgroundColor: entry.color }}
@@ -103,6 +143,12 @@ export function SegmentPieChart({ data, year, title }: SegmentPieChartProps) {
               dataKey="value"
               stroke="hsl(222, 47%, 6%)"
               strokeWidth={2}
+              activeIndex={activeIndex ?? undefined}
+              activeShape={renderActiveShape}
+              onMouseEnter={(_, index) => setActiveIndex(index)}
+              onMouseLeave={() => setActiveIndex(null)}
+              onClick={handlePieClick}
+              style={{ cursor: "pointer" }}
             >
               {pieData.map((entry, index) => (
                 <Cell
@@ -116,6 +162,9 @@ export function SegmentPieChart({ data, year, title }: SegmentPieChartProps) {
           </PieChart>
         </ResponsiveContainer>
       </div>
+      <p className="mt-2 text-center text-xs text-muted-foreground">
+        Click any segment to see detailed trends
+      </p>
     </motion.div>
   );
 }

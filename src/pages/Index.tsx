@@ -10,6 +10,8 @@ import { RegionalBarChart } from "@/components/dashboard/RegionalBarChart";
 import { YearSelector } from "@/components/dashboard/YearSelector";
 import { SegmentTabs, SegmentType } from "@/components/dashboard/SegmentTabs";
 import { ComparisonTable } from "@/components/dashboard/ComparisonTable";
+import { DrillDownModal } from "@/components/dashboard/DrillDownModal";
+import { useDrillDown } from "@/hooks/useDrillDown";
 
 import {
   totalMarketData,
@@ -19,11 +21,13 @@ import {
   applicationData,
   furnishedEquipmentData,
   calculateCAGR,
+  YearlyData,
 } from "@/data/marketData";
 
 const Index = () => {
   const [selectedYear, setSelectedYear] = useState(2024);
   const [segmentType, setSegmentType] = useState<SegmentType>("endUser");
+  const { drillDownState, openDrillDown, closeDrillDown } = useDrillDown();
 
   // Calculate KPI values
   const currentMarketValue = totalMarketData.find((d) => d.year === selectedYear)?.value ?? 0;
@@ -54,6 +58,62 @@ const Index = () => {
 
   const currentSegment = getSegmentData();
 
+  // Get related segments for drill-down based on current context
+  const getRelatedSegmentsForDrillDown = (segmentName: string) => {
+    // Provide related segments based on what was clicked
+    if (segmentType === "region") {
+      return { title: "Aircraft Types in this Region", data: aircraftTypeData };
+    }
+    if (segmentType === "aircraft") {
+      return { title: "Applications for this Aircraft Type", data: applicationData };
+    }
+    if (segmentType === "endUser") {
+      return { title: "Regions for this End User", data: regionData };
+    }
+    if (segmentType === "application") {
+      return { title: "Aircraft Types by Application", data: aircraftTypeData };
+    }
+    if (segmentType === "equipment") {
+      return { title: "End Users by Equipment", data: endUserData };
+    }
+    return undefined;
+  };
+
+  // Handle drill-down for pie chart segments
+  const handlePieSegmentClick = (segmentName: string, segmentData: YearlyData[], color: string) => {
+    openDrillDown(segmentName, segmentData, color, getRelatedSegmentsForDrillDown(segmentName));
+  };
+
+  // Handle drill-down for bar chart segments
+  const handleBarClick = (segmentName: string, segmentData: YearlyData[], color: string) => {
+    // For regional bar, show aircraft breakdown; for aircraft bar, show application breakdown
+    openDrillDown(segmentName, segmentData, color, { title: "Related Applications", data: applicationData });
+  };
+
+  // Handle drill-down for aircraft type bar
+  const handleAircraftBarClick = (segmentName: string, segmentData: YearlyData[], color: string) => {
+    openDrillDown(segmentName, segmentData, color, { title: "Applications", data: applicationData });
+  };
+
+  // Handle drill-down for area chart legend
+  const handleTrendSegmentClick = (segmentName: string, segmentData: YearlyData[], color: string) => {
+    openDrillDown(segmentName, segmentData, color, getRelatedSegmentsForDrillDown(segmentName));
+  };
+
+  // Handle drill-down for comparison table rows
+  const handleTableRowClick = (segmentName: string, segmentData: YearlyData[], color: string) => {
+    openDrillDown(segmentName, segmentData, color, getRelatedSegmentsForDrillDown(segmentName));
+  };
+
+  // Handle KPI card clicks for drill-down
+  const handleMarketSizeClick = () => {
+    openDrillDown("Total Market", totalMarketData, "hsl(192, 95%, 55%)", { title: "By Region", data: regionData });
+  };
+
+  const handleForecastClick = () => {
+    openDrillDown("2034 Forecast", totalMarketData, "hsl(38, 92%, 55%)", { title: "By Aircraft Type", data: aircraftTypeData });
+  };
+
   return (
     <div className="min-h-screen">
       <DashboardHeader />
@@ -76,6 +136,7 @@ const Index = () => {
             icon={DollarSign}
             delay={0}
             accentColor="primary"
+            onClick={handleMarketSizeClick}
           />
           <KPICard
             title="2034 Forecast"
@@ -84,6 +145,7 @@ const Index = () => {
             icon={TrendingUp}
             delay={0.1}
             accentColor="accent"
+            onClick={handleForecastClick}
           />
           <KPICard
             title="10-Year CAGR"
@@ -113,14 +175,16 @@ const Index = () => {
               data={totalMarketData}
               segments={currentSegment.data}
               title="Market Size Trend"
-              subtitle="Historical and forecast data (US$ Millions)"
+              subtitle="Historical and forecast data (US$ Millions) - Click legend to drill down"
               showSegments
+              onSegmentClick={handleTrendSegmentClick}
             />
           </div>
           <SegmentPieChart
             data={currentSegment.data}
             year={selectedYear}
             title={currentSegment.title}
+            onSegmentClick={handlePieSegmentClick}
           />
         </div>
 
@@ -131,12 +195,14 @@ const Index = () => {
             year={selectedYear}
             title="Regional Distribution"
             subtitle={`Market size by region in ${selectedYear}`}
+            onBarClick={handleBarClick}
           />
           <RegionalBarChart
             data={aircraftTypeData}
             year={selectedYear}
             title="Aircraft Type Breakdown"
             subtitle={`Market size by aircraft type in ${selectedYear}`}
+            onBarClick={handleAircraftBarClick}
           />
         </div>
 
@@ -146,6 +212,7 @@ const Index = () => {
           startYear={2024}
           endYear={2034}
           title={`${currentSegment.title} - Growth Analysis`}
+          onRowClick={handleTableRowClick}
         />
 
         {/* Footer */}
@@ -173,6 +240,16 @@ const Index = () => {
           </div>
         </motion.footer>
       </main>
+
+      {/* Drill-Down Modal */}
+      <DrillDownModal
+        isOpen={drillDownState.isOpen}
+        onClose={closeDrillDown}
+        segmentName={drillDownState.segmentName}
+        segmentData={drillDownState.segmentData}
+        color={drillDownState.color}
+        relatedSegments={drillDownState.relatedSegments}
+      />
     </div>
   );
 };

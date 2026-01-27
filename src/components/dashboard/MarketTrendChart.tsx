@@ -10,6 +10,7 @@ import {
   Legend,
 } from "recharts";
 import { YearlyData, SegmentData } from "@/data/marketData";
+import { MousePointer2 } from "lucide-react";
 
 interface MarketTrendChartProps {
   data: YearlyData[];
@@ -17,6 +18,7 @@ interface MarketTrendChartProps {
   title: string;
   subtitle?: string;
   showSegments?: boolean;
+  onSegmentClick?: (segmentName: string, segmentData: YearlyData[], color: string) => void;
 }
 
 const chartColors = [
@@ -34,6 +36,7 @@ export function MarketTrendChart({
   title,
   subtitle,
   showSegments = false,
+  onSegmentClick,
 }: MarketTrendChartProps) {
   const chartData = data.map((d) => {
     const point: Record<string, number> = { year: d.year, total: d.value };
@@ -63,10 +66,45 @@ export function MarketTrendChart({
               </span>
             </div>
           ))}
+          {showSegments && segments && (
+            <p className="mt-2 text-xs text-primary flex items-center gap-1">
+              <MousePointer2 className="h-3 w-3" /> Click legend to drill down
+            </p>
+          )}
         </div>
       );
     }
     return null;
+  };
+
+  const handleLegendClick = (entry: any) => {
+    if (!onSegmentClick || !segments) return;
+    const segment = segments.find((s) => s.name === entry.value);
+    if (segment) {
+      const colorIndex = segments.indexOf(segment);
+      onSegmentClick(segment.name, segment.data, chartColors[colorIndex % chartColors.length]);
+    }
+  };
+
+  const renderLegend = (props: any) => {
+    const { payload } = props;
+    return (
+      <div className="mt-4 flex flex-wrap justify-center gap-4">
+        {payload.map((entry: any, index: number) => (
+          <div
+            key={index}
+            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-secondary/50"
+            onClick={() => handleLegendClick(entry)}
+          >
+            <div
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-sm text-muted-foreground">{entry.value}</span>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -132,12 +170,7 @@ export function MarketTrendChart({
             <Tooltip content={<CustomTooltip />} />
             {showSegments && segments ? (
               <>
-                <Legend
-                  wrapperStyle={{ paddingTop: "20px" }}
-                  formatter={(value) => (
-                    <span className="text-sm text-muted-foreground">{value}</span>
-                  )}
-                />
+                <Legend content={renderLegend} />
                 {segments.map((seg, idx) => (
                   <Area
                     key={seg.name}
@@ -146,6 +179,7 @@ export function MarketTrendChart({
                     stroke={chartColors[idx % chartColors.length]}
                     fill={`url(#gradient-${idx})`}
                     strokeWidth={2}
+                    style={{ cursor: "pointer" }}
                   />
                 ))}
               </>
@@ -162,6 +196,11 @@ export function MarketTrendChart({
           </AreaChart>
         </ResponsiveContainer>
       </div>
+      {showSegments && segments && (
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          Click any legend item to see detailed analysis
+        </p>
+      )}
     </motion.div>
   );
 }
