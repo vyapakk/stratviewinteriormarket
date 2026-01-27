@@ -10,13 +10,16 @@ import {
   Legend,
   Cell,
 } from "recharts";
-import { SegmentData } from "@/data/marketData";
+import { SegmentData, YearlyData } from "@/data/marketData";
+import { useState } from "react";
+import { MousePointer2 } from "lucide-react";
 
 interface RegionalBarChartProps {
   data: SegmentData[];
   year: number;
   title: string;
   subtitle?: string;
+  onBarClick?: (segmentName: string, segmentData: YearlyData[], color: string) => void;
 }
 
 const chartColors = [
@@ -31,11 +34,15 @@ export function RegionalBarChart({
   year,
   title,
   subtitle,
+  onBarClick,
 }: RegionalBarChartProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
   const barData = data.map((segment, index) => ({
     name: segment.name,
     value: segment.data.find((d) => d.year === year)?.value ?? 0,
     color: chartColors[index % chartColors.length],
+    fullData: segment.data,
   }));
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -49,10 +56,20 @@ export function RegionalBarChart({
               ${payload[0].value.toLocaleString()}M
             </span>
           </div>
+          <p className="mt-2 text-xs text-primary flex items-center gap-1">
+            <MousePointer2 className="h-3 w-3" /> Click to drill down
+          </p>
         </div>
       );
     }
     return null;
+  };
+
+  const handleBarClick = (data: any, index: number) => {
+    if (onBarClick) {
+      const segment = barData[index];
+      onBarClick(segment.name, segment.fullData, segment.color);
+    }
   };
 
   return (
@@ -98,14 +115,29 @@ export function RegionalBarChart({
               width={75}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="value" radius={[0, 4, 4, 0]} name="Market Size">
+            <Bar
+              dataKey="value"
+              radius={[0, 4, 4, 0]}
+              name="Market Size"
+              onClick={handleBarClick}
+              style={{ cursor: "pointer" }}
+            >
               {barData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.color}
+                  opacity={activeIndex === null || activeIndex === index ? 1 : 0.5}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onMouseLeave={() => setActiveIndex(null)}
+                />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
+      <p className="mt-2 text-center text-xs text-muted-foreground">
+        Click any bar to see detailed trends
+      </p>
     </motion.div>
   );
 }

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, MousePointer2 } from "lucide-react";
 import { AnimatedCounter } from "./AnimatedCounter";
 
 interface KPICardProps {
@@ -13,6 +13,7 @@ interface KPICardProps {
   icon: LucideIcon;
   delay?: number;
   accentColor?: "primary" | "accent" | "chart-3" | "chart-4";
+  onClick?: () => void;
 }
 
 const accentColors = {
@@ -40,17 +41,27 @@ export function KPICard({
   icon: Icon,
   delay = 0,
   accentColor = "primary",
+  onClick,
 }: KPICardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
-      className={`stat-card rounded-xl bg-gradient-to-br ${accentColors[accentColor]} border p-6 backdrop-blur-sm`}
+      whileHover={onClick ? { scale: 1.02 } : undefined}
+      onClick={onClick}
+      className={`stat-card rounded-xl bg-gradient-to-br ${accentColors[accentColor]} border p-6 backdrop-blur-sm ${
+        onClick ? "cursor-pointer hover:shadow-lg transition-shadow" : ""
+      }`}
     >
       <div className="flex items-start justify-between">
         <div className="space-y-3">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            {onClick && (
+              <MousePointer2 className="h-3 w-3 text-muted-foreground/50" />
+            )}
+          </div>
           <div className="flex items-baseline gap-1">
             <AnimatedCounter
               value={value}
