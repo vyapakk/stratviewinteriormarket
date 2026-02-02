@@ -25,7 +25,7 @@ export function DashboardHeader() {
               <img 
                 src={stratviewLogoWhite} 
                 alt="Stratview Research" 
-                className="h-16 w-auto md:h-20"
+                className="h-12 w-auto"
               />
             </motion.div>
             <div>
