@@ -25,12 +25,12 @@ interface MarketTrendChartProps {
 }
 
 const chartColors = [
-  "hsl(192, 95%, 55%)",
-  "hsl(38, 92%, 55%)",
-  "hsl(262, 83%, 58%)",
-  "hsl(142, 71%, 45%)",
-  "hsl(346, 77%, 50%)",
-  "hsl(199, 89%, 48%)",
+  "hsl(180, 60%, 30%)",
+  "hsl(162, 52%, 55%)",
+  "hsl(210, 57%, 35%)",
+  "hsl(180, 77%, 20%)",
+  "hsl(38, 80%, 55%)",
+  "hsl(280, 60%, 55%)",
 ];
 
 export function MarketTrendChart({
@@ -160,20 +160,20 @@ export function MarketTrendChart({
                 ))
               ) : (
                 <linearGradient id="gradient-total" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(192, 95%, 55%)" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="hsl(192, 95%, 55%)" stopOpacity={0} />
+                  <stop offset="5%" stopColor="hsl(162, 52%, 55%)" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="hsl(162, 52%, 55%)" stopOpacity={0} />
                 </linearGradient>
               )}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(217, 33%, 18%)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 50%, 22%)" />
             <XAxis
               dataKey="year"
-              stroke="hsl(215, 20%, 55%)"
+              stroke="hsl(180, 15%, 60%)"
               fontSize={12}
               tickLine={false}
             />
             <YAxis
-              stroke="hsl(215, 20%, 55%)"
+              stroke="hsl(180, 15%, 60%)"
               fontSize={12}
               tickLine={false}
               tickFormatter={(value) => `$${(value / 1000).toFixed(0)}B`}
@@ -198,7 +198,7 @@ export function MarketTrendChart({
               <Area
                 type="monotone"
                 dataKey="total"
-                stroke="hsl(192, 95%, 55%)"
+                stroke="hsl(162, 52%, 55%)"
                 fill="url(#gradient-total)"
                 strokeWidth={2}
                 name="Market Size"

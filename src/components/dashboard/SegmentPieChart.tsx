@@ -22,14 +22,14 @@ interface SegmentPieChartProps {
 }
 
 const chartColors = [
-  "hsl(192, 95%, 55%)",
-  "hsl(38, 92%, 55%)",
-  "hsl(262, 83%, 58%)",
-  "hsl(142, 71%, 45%)",
-  "hsl(346, 77%, 50%)",
-  "hsl(199, 89%, 48%)",
-  "hsl(280, 65%, 60%)",
-  "hsl(60, 70%, 50%)",
+  "hsl(180, 60%, 30%)",
+  "hsl(162, 52%, 55%)",
+  "hsl(210, 57%, 35%)",
+  "hsl(180, 77%, 20%)",
+  "hsl(38, 80%, 55%)",
+  "hsl(280, 60%, 55%)",
+  "hsl(160, 70%, 40%)",
+  "hsl(200, 70%, 45%)",
 ];
 
 export function SegmentPieChart({ data, year, title, onSegmentClick }: SegmentPieChartProps) {

@@ -10,7 +10,7 @@ export function useChartDownload() {
       try {
         // First capture the chart
         const chartDataUrl = await toPng(ref.current, {
-          backgroundColor: "#0a0f1a",
+          backgroundColor: "#0d3d3d",
           quality: 1,
           pixelRatio: 2,
         });
@@ -55,7 +55,7 @@ export function useChartDownload() {
         const logoY = canvas.height - logoHeight - padding;
 
         // Draw semi-transparent background for logo
-        ctx.fillStyle = "rgba(10, 15, 26, 0.7)";
+        ctx.fillStyle = "rgba(13, 61, 61, 0.8)";
         ctx.fillRect(logoX - 10, logoY - 10, logoWidth + 20, logoHeight + 20);
 
         // Draw the logo

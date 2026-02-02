@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Poppins', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
@@ -68,6 +68,15 @@ export default {
           4: "hsl(var(--chart-4))",
           5: "hsl(var(--chart-5))",
           6: "hsl(var(--chart-6))",
+        },
+        // Stratview brand colors
+        stratview: {
+          teal: {
+            dark: "#0d5a5a",
+            DEFAULT: "#1f7a7a",
+            light: "#4fc9ab",
+          },
+          navy: "#1b4263",
         },
       },
       borderRadius: {

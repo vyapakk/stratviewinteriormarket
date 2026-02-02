@@ -62,14 +62,14 @@ export function DrillDownModal({
   const forecastData = segmentData.filter((d) => d.year >= 2024);
 
   const subSegmentColors = [
-    "hsl(192, 95%, 55%)",
-    "hsl(38, 92%, 55%)",
-    "hsl(262, 83%, 58%)",
-    "hsl(142, 71%, 45%)",
-    "hsl(346, 77%, 50%)",
-    "hsl(199, 89%, 48%)",
-    "hsl(280, 65%, 60%)",
-    "hsl(60, 70%, 50%)",
+    "hsl(180, 60%, 30%)",
+    "hsl(162, 52%, 55%)",
+    "hsl(210, 57%, 35%)",
+    "hsl(180, 77%, 20%)",
+    "hsl(38, 80%, 55%)",
+    "hsl(280, 60%, 55%)",
+    "hsl(160, 70%, 40%)",
+    "hsl(200, 70%, 45%)",
   ];
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -255,15 +255,15 @@ export function DrillDownModal({
                       />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(217, 33%, 18%)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 50%, 22%)" />
                   <XAxis
                     dataKey="year"
-                    stroke="hsl(215, 20%, 55%)"
+                    stroke="hsl(180, 15%, 60%)"
                     fontSize={12}
                     tickLine={false}
                   />
                   <YAxis
-                    stroke="hsl(215, 20%, 55%)"
+                    stroke="hsl(180, 15%, 60%)"
                     fontSize={12}
                     tickLine={false}
                     tickFormatter={(value) => `$${(value / 1000).toFixed(1)}B`}
@@ -305,10 +305,10 @@ export function DrillDownModal({
                     layout="vertical"
                     margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(217, 33%, 18%)" horizontal vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 50%, 22%)" horizontal vertical={false} />
                     <XAxis
                       type="number"
-                      stroke="hsl(215, 20%, 55%)"
+                      stroke="hsl(180, 15%, 60%)"
                       fontSize={12}
                       tickLine={false}
                       tickFormatter={(value) => `$${(value / 1000).toFixed(1)}B`}
@@ -316,7 +316,7 @@ export function DrillDownModal({
                     <YAxis
                       type="category"
                       dataKey="name"
-                      stroke="hsl(215, 20%, 55%)"
+                      stroke="hsl(180, 15%, 60%)"
                       fontSize={11}
                       tickLine={false}
                       width={75}

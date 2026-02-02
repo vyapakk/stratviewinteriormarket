@@ -25,10 +25,10 @@ interface RegionalBarChartProps {
 }
 
 const chartColors = [
-  "hsl(192, 95%, 55%)",
-  "hsl(38, 92%, 55%)",
-  "hsl(262, 83%, 58%)",
-  "hsl(142, 71%, 45%)",
+  "hsl(180, 60%, 30%)",
+  "hsl(162, 52%, 55%)",
+  "hsl(210, 57%, 35%)",
+  "hsl(180, 77%, 20%)",
 ];
 
 export function RegionalBarChart({
@@ -105,13 +105,13 @@ export function RegionalBarChart({
           >
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="hsl(217, 33%, 18%)"
+              stroke="hsl(210, 50%, 22%)"
               horizontal={true}
               vertical={false}
             />
             <XAxis
               type="number"
-              stroke="hsl(215, 20%, 55%)"
+              stroke="hsl(180, 15%, 60%)"
               fontSize={12}
               tickLine={false}
               tickFormatter={(value) => `$${(value / 1000).toFixed(1)}B`}
@@ -119,7 +119,7 @@ export function RegionalBarChart({
             <YAxis
               type="category"
               dataKey="name"
-              stroke="hsl(215, 20%, 55%)"
+              stroke="hsl(180, 15%, 60%)"
               fontSize={12}
               tickLine={false}
               width={75}
