@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Plane } from "lucide-react";
+import stratviewLogoWhite from "@/assets/stratview-logo-white.png";
 
 export function DashboardHeader() {
   return (
@@ -21,9 +21,12 @@ export function DashboardHeader() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-              className="rounded-xl bg-primary/10 p-3 glow-primary"
             >
-              <Plane className="h-8 w-8 text-primary" />
+              <img 
+                src={stratviewLogoWhite} 
+                alt="Stratview Research" 
+                className="h-12 w-auto"
+              />
             </motion.div>
             <div>
               <h1 className="text-2xl font-bold text-foreground md:text-3xl">

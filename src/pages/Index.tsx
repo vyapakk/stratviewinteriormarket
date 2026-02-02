@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, Globe, Armchair, Plane, DollarSign, BarChart3 } from "lucide-react";
+import { TrendingUp, Globe, DollarSign, BarChart3 } from "lucide-react";
+import stratviewLogoColor from "@/assets/stratview-logo-color.png";
 
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { KPICard } from "@/components/dashboard/KPICard";
@@ -231,11 +232,12 @@ const Index = () => {
                 All values in US$ Millions unless otherwise specified
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Plane className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-muted-foreground">
-                Market Intelligence Dashboard
-              </span>
+            <div className="flex items-center gap-3">
+              <img 
+                src={stratviewLogoColor} 
+                alt="Stratview Research" 
+                className="h-10 w-auto"
+              />
             </div>
           </div>
         </motion.footer>
