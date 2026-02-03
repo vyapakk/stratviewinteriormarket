@@ -21,6 +21,7 @@ import {
   regionData,
   applicationData,
   furnishedEquipmentData,
+  countryDataByRegion,
   calculateCAGR,
   YearlyData,
 } from "@/data/marketData";
@@ -61,9 +62,9 @@ const Index = () => {
 
   // Get related segments for drill-down based on current context
   const getRelatedSegmentsForDrillDown = (segmentName: string) => {
-    // Provide related segments based on what was clicked
-    if (segmentType === "region") {
-      return { title: "Aircraft Types in this Region", data: aircraftTypeData };
+    // For regions, show country breakdown
+    if (segmentType === "region" && countryDataByRegion[segmentName]) {
+      return { title: `Countries in ${segmentName}`, data: countryDataByRegion[segmentName] };
     }
     if (segmentType === "aircraft") {
       return { title: "Applications for this Aircraft Type", data: applicationData };
@@ -85,10 +86,15 @@ const Index = () => {
     openDrillDown(segmentName, segmentData, color, getRelatedSegmentsForDrillDown(segmentName));
   };
 
-  // Handle drill-down for bar chart segments
+  // Handle drill-down for bar chart segments (Regional Distribution)
   const handleBarClick = (segmentName: string, segmentData: YearlyData[], color: string) => {
-    // For regional bar, show aircraft breakdown; for aircraft bar, show application breakdown
-    openDrillDown(segmentName, segmentData, color, { title: "Related Applications", data: applicationData });
+    // For regional bar, show country breakdown
+    const countryData = countryDataByRegion[segmentName];
+    if (countryData) {
+      openDrillDown(segmentName, segmentData, color, { title: `Countries in ${segmentName}`, data: countryData });
+    } else {
+      openDrillDown(segmentName, segmentData, color, { title: "Related Applications", data: applicationData });
+    }
   };
 
   // Handle drill-down for aircraft type bar
