@@ -77,7 +77,6 @@ const Index = () => {
         marketData={marketData}
         title={segmentInfo.title}
         selectedYear={selectedYear}
-        onYearChange={setSelectedYear}
       />
     );
   };
