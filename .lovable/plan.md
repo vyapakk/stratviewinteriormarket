@@ -1,153 +1,199 @@
 
-# Year Selector Repositioning and Enhanced Donut Charts Plan
+
+# End User Tab Enhancement Plan
 
 ## Overview
 
-This plan implements two key improvements to the Market Overview tab:
-1. Move the year selector to be inline with the main navigation tabs
-2. Upgrade the mini donut charts to have the same interactive features as SegmentPieChart (slice expansion on hover, drill-down modal on click)
+This plan implements two key changes:
+1. Remove duplicate year selectors from individual tabs (use only the universal one in navigation)
+2. Enhance the End User tab with two new stacked horizontal bar charts showing OE/Aftermarket breakdown by Aircraft Type and by Region
 
 ---
 
-## Change 1: Year Selector Inline with Navigation
+## Part 1: Remove Duplicate Year Selectors
 
-### Current Layout
-```text
-+----------------------------------------------------------+
-| Market Overview | End-User | Aircraft | Region | ...     |
-+----------------------------------------------------------+
+### Current State
+- Year selector appears in MainNavigation (universal)
+- Year selector also appears separately in SegmentDetailTab
 
-                                    [ Year: 2024 ▼ ]  <-- separate row
-```
+### Changes Required
 
-### New Layout
-```text
-+----------------------------------------------------------------------+
-| Market Overview | End-User | Aircraft | Region | ...   [ Year: 2024 ▼ ]
-+----------------------------------------------------------------------+
-```
-
-### Files to Modify
-
-**1. MainNavigation.tsx**
-- Add optional props: `selectedYear`, `onYearChange`, `showYearSelector`
-- Wrap the existing content with a flex container
-- Conditionally render YearSelector on the right side when props are provided
-
-**2. Index.tsx**
-- Pass year selector props to MainNavigation component
-
-**3. MarketOverviewTab.tsx**
-- Remove the standalone YearSelector component and its wrapper
+**File: `src/pages/tabs/SegmentDetailTab.tsx`**
+- Remove the YearSelector component import
+- Remove the year selector wrapper div (lines 98-101)
+- Keep the `selectedYear` prop but remove `onYearChange` usage within the tab
 
 ---
 
-## Change 2: Enhanced Donut Charts with Drill-Down
+## Part 2: Add Stacked Bar Charts to End User Tab
 
-### Current Behavior
-- Simple hover effect on card border
-- Clicking navigates to segment detail tab
-- No individual slice interaction
+### Data Challenge
 
-### New Behavior (matching SegmentPieChart)
-- Individual slice expands on hover (outerRadius + 8)
-- Detailed tooltip showing value, percentage, and "Click to drill down" hint
-- Clicking a slice opens the DrillDownModal with that segment's detailed data
-- Clicking outside pie area (on card) still navigates to tab
+The current JSON data structure has:
+- OE and Aftermarket totals by year
+- Aircraft Type totals by year
+- Region totals by year
 
-### Files to Modify
+But it does NOT have cross-dimensional data like "OE by Aircraft Type" or "Aftermarket by Region".
 
-**1. DistributionDonutsRow.tsx**
+### Solution
 
-Add to MiniDonut component:
-- Import `Sector` from recharts for active shape rendering
-- Add `useState` for `activeIndex` to track which slice is hovered
-- Add `renderActiveShape` function that renders expanded slice
-- Add props to Pie: `activeIndex`, `activeShape`, `onMouseEnter`, `onMouseLeave`, `onClick`
-- Update tooltip to show "Click to drill down" hint
-- Add new prop for slice click handling: `onSliceClick`
+Add new cross-dimensional data sections to `marketData.json`:
+```json
+{
+  "endUserByAircraftType": [
+    {
+      "name": "Narrow Body",
+      "oe": [{ "year": 2024, "value": X }, ...],
+      "aftermarket": [{ "year": 2024, "value": Y }, ...]
+    },
+    ...
+  ],
+  "endUserByRegion": [
+    {
+      "name": "North America",
+      "oe": [{ "year": 2024, "value": X }, ...],
+      "aftermarket": [{ "year": 2024, "value": Y }, ...]
+    },
+    ...
+  ]
+}
+```
 
-New props for component:
+For the initial implementation, we'll estimate these values using proportional distribution based on existing data.
+
+---
+
+## New Component: StackedBarChart
+
+**File: `src/components/dashboard/StackedBarChart.tsx`**
+
+A new reusable component for stacked horizontal bar charts:
+
+```text
++------------------------------------------------------------------------+
+| Title                                                      [Download]  |
+| Subtitle                                                               |
++------------------------------------------------------------------------+
+|                                                                        |
+|  Narrow Body    |████████████████████████████████|██████████|          |
+|                                                                        |
+|  Wide-Body      |████████████████████████████|█████████████|           |
+|                                                                        |
+|  Regional       |████████████████|██████|                              |
+|                                                                        |
+|  Business Jets  |██████████████|█████████|                             |
+|                                                                        |
++------------------------------------------------------------------------+
+|                   [████] OE   [████] Aftermarket                       |
++------------------------------------------------------------------------+
+```
+
+### Component Props
+
 ```typescript
-onSliceClick?: (
-  segmentName: string, 
-  segmentData: YearlyData[], 
-  color: string,
-  relatedSegments?: { title: string; data: SegmentData[] }
-) => void;
+interface StackedBarChartProps {
+  data: {
+    name: string;
+    oe: number;
+    aftermarket: number;
+    oeFullData?: YearlyData[];
+    aftermarketFullData?: YearlyData[];
+  }[];
+  year: number;
+  title: string;
+  subtitle?: string;
+  onSegmentClick?: (segmentName: string, endUserType: 'OE' | 'Aftermarket', value: number) => void;
+}
 ```
 
-**2. MarketOverviewTab.tsx**
-
-- Import `useDrillDown` hook and `DrillDownModal` component
-- Add drill-down state management
-- Create handler function `handleDonutSliceClick` that:
-  - Receives segment info from the clicked slice
-  - Determines related segments based on which donut was clicked
-  - Opens the DrillDownModal
-- Pass the handler to DistributionDonutsRow
-- Render DrillDownModal at the bottom of the component
+### Features
+- Horizontal stacked bars using Recharts BarChart
+- OE portion in cyan color, Aftermarket in amber color
+- Custom tooltip showing both values and percentages
+- Hover effect highlighting the hovered segment
+- Click-to-drill-down functionality
+- Download button for chart export
 
 ---
 
-## Technical Details
+## End User Tab Layout
 
-### Slice Expansion on Hover
-
-The active shape feature uses Recharts' `Sector` component to render an expanded version of the hovered slice:
+**Updated layout for End User tab:**
 
 ```text
-Normal slice: outerRadius = 55
-Hovered slice: outerRadius = 55 + 8 = 63
-
-Additional styling:
-- Drop shadow filter for depth
-- Cursor pointer for interactivity
++------------------------------------------------------------------+
+| [KPI Cards Row - 3 cards]                                        |
++------------------------------------------------------------------+
+|                                |                                  |
+| [Line Chart - Market Trend]    | [Donut Chart - OE vs Aftermarket]|
+| (2016-2034, OE + Aftermarket)  | (Selected Year Distribution)     |
+|                                |                                  |
++------------------------------------------------------------------+
+|                                                                   |
+| [Stacked Bar Chart: OE/Aftermarket by Aircraft Type]             |
+| Narrow Body, Wide-Body, Regional, Business Jets                   |
+|                                                                   |
++------------------------------------------------------------------+
+|                                                                   |
+| [Stacked Bar Chart: OE/Aftermarket by Region]                    |
+| North America, Europe, Asia-Pacific, Rest of World               |
+|                                                                   |
++------------------------------------------------------------------+
+| [Comparison Table - Growth Analysis]                              |
++------------------------------------------------------------------+
 ```
-
-### Click Handling Strategy
-
-Two distinct click actions:
-
-| Click Target | Action |
-|--------------|--------|
-| Pie slice | Opens DrillDownModal with segment details |
-| Card (outside pie) | Navigates to segment detail tab |
-
-Implementation uses `stopPropagation()` on pie click to prevent both actions firing.
-
-### Related Segments for Drill-Down
-
-Each donut type will have appropriate related segments:
-
-| Donut Type | Related Segments in Modal |
-|------------|--------------------------|
-| End User | Regions for this End User |
-| Aircraft Type | Applications for this Aircraft Type |
-| Region | Countries in this Region |
-| Application | Aircraft Types by Application |
-| Equipment | End Users by Equipment |
 
 ---
 
 ## File Changes Summary
 
-| File | Action | Changes |
-|------|--------|---------|
-| `MainNavigation.tsx` | Modify | Add year selector props and inline rendering with flexbox |
-| `Index.tsx` | Modify | Pass `selectedYear` and `onYearChange` props to MainNavigation |
-| `MarketOverviewTab.tsx` | Modify | Remove year selector, add useDrillDown hook and DrillDownModal |
-| `DistributionDonutsRow.tsx` | Modify | Add hover expansion, slice click handler, enhanced tooltip |
+| File | Action | Description |
+|------|--------|-------------|
+| `src/pages/tabs/SegmentDetailTab.tsx` | Modify | Remove year selector, add condition for End User tab to show stacked charts |
+| `src/components/dashboard/StackedBarChart.tsx` | Create | New stacked horizontal bar chart component |
+| `src/hooks/useMarketData.ts` | Modify | Add interface for cross-dimensional data, add helper to calculate proportional breakdown |
+| `public/data/marketData.json` | Modify | Add `endUserByAircraftType` and `endUserByRegion` data sections |
 
 ---
 
-## Expected Behavior After Changes
+## Implementation Approach for Data
 
-1. **Year Selector**: Appears inline on the right side of the navigation bar, visible on all tabs
-2. **Donut Hover**: Individual slices expand outward when hovered, with a subtle shadow effect
-3. **Donut Click**: Clicking any slice (e.g., "OE" in End User donut) opens the Deep Dive modal showing:
-   - KPI summary (2024 Value, 2034 Forecast, CAGR, YoY Growth)
-   - Historical and forecast trend chart
-   - Related segments bar chart (clickable for further drill-down)
-   - Year-over-year data table
-4. **Card Click**: Clicking outside the pie chart area still navigates to that segment's detail tab
+Since the actual cross-dimensional data might not be available, we'll use proportional estimation:
+
+```
+OE by Narrow Body = Total Narrow Body × (Total OE / Total Market)
+Aftermarket by Narrow Body = Total Narrow Body × (Total Aftermarket / Total Market)
+```
+
+This maintains consistency with total values while providing meaningful visualization.
+
+Alternatively, the data can be provided in the JSON file with actual values if available from the research.
+
+---
+
+## Technical Details
+
+### Stacked Bar Chart Implementation
+
+Uses Recharts BarChart with:
+- `layout="vertical"` for horizontal bars
+- Two Bar components stacked: `stackId="stack"`
+- Bar 1: `dataKey="oe"` with cyan fill
+- Bar 2: `dataKey="aftermarket"` with amber fill
+- Custom tooltip showing both segments
+- Legend at bottom showing color keys
+
+### Colors
+
+- OE (Original Equipment): `hsl(192, 95%, 55%)` - Cyan
+- Aftermarket: `hsl(38, 92%, 55%)` - Amber
+
+These match the existing chart color scheme.
+
+### Responsive Behavior
+
+- On mobile: Charts stack vertically
+- Bar labels remain visible with adequate left margin
+- Touch-friendly hover/click areas
+
