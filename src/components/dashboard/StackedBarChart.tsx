@@ -52,7 +52,7 @@ export function StackedBarChart({
 }: StackedBarChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const { downloadChart } = useChartDownload();
-  const [activeSegment, setActiveSegment] = useState<{ barIndex: number; segmentIndex: number } | null>(null);
+  const [activeSegment, setActiveSegment] = useState<{ barIndex: number; segmentIndex: number; segmentName: string } | null>(null);
 
   // Transform data for Recharts - each segment becomes a dataKey
   const chartData = data.map((bar) => {
@@ -65,37 +65,31 @@ export function StackedBarChart({
   });
 
   const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
+    if (active && payload && payload.length && activeSegment) {
+      // Find the specific segment being hovered
+      const hoveredEntry = payload.find((p: any) => p.name === activeSegment.segmentName);
+      if (!hoveredEntry) return null;
+
       const total = payload.reduce((sum: number, p: any) => sum + (p.value || 0), 0);
+      const percent = total > 0 ? ((hoveredEntry.value / total) * 100).toFixed(1) : "0";
+
       return (
         <div className="rounded-lg border border-border bg-popover p-4 shadow-lg">
-          <p className="font-semibold text-foreground">{label}</p>
+          <p className="font-semibold text-foreground">{label} - {activeSegment.segmentName}</p>
           <div className="mt-2 space-y-2 text-sm">
-            {payload.map((entry: any, index: number) => {
-              const percent = total > 0 ? ((entry.value / total) * 100).toFixed(1) : "0";
-              return (
-                <div key={index} className="flex items-center gap-2">
-                  <div
-                    className="h-3 w-3 rounded-sm"
-                    style={{ backgroundColor: entry.fill }}
-                  />
-                  <span className="text-muted-foreground">{entry.name}:</span>
-                  <span className="font-mono font-medium text-foreground">
-                    ${entry.value?.toLocaleString()}M
-                  </span>
-                  <span className="text-muted-foreground">({percent}%)</span>
-                </div>
-              );
-            })}
-            <div className="border-t border-border pt-2">
-              <span className="text-muted-foreground">Total:</span>
-              <span className="ml-2 font-mono font-medium text-foreground">
-                ${total.toLocaleString()}M
+            <div className="flex items-center gap-2">
+              <div
+                className="h-3 w-3 rounded-sm"
+                style={{ backgroundColor: hoveredEntry.fill }}
+              />
+              <span className="font-mono font-medium text-foreground">
+                ${hoveredEntry.value?.toLocaleString()}M
               </span>
+              <span className="text-muted-foreground">({percent}% of {label})</span>
             </div>
           </div>
           {onSegmentClick && (
-            <p className="mt-2 text-xs text-primary">Click segment to drill down</p>
+            <p className="mt-2 text-xs text-primary">Click to drill down</p>
           )}
         </div>
       );
@@ -195,7 +189,7 @@ export function StackedBarChart({
                         ? 1
                         : 0.6
                     }
-                    onMouseEnter={() => setActiveSegment({ barIndex, segmentIndex: index })}
+                    onMouseEnter={() => setActiveSegment({ barIndex, segmentIndex: index, segmentName })}
                     onMouseLeave={() => setActiveSegment(null)}
                   />
                 ))}
