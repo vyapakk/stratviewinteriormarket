@@ -19,6 +19,12 @@ export interface MarketData {
   application: SegmentData[];
   furnishedEquipment: SegmentData[];
   countryDataByRegion: Record<string, SegmentData[]>;
+  // Cross-dimensional data for stacked bar charts
+  endUserByAircraftType: Record<string, SegmentData[]>;
+  endUserByRegion: Record<string, SegmentData[]>;
+  aircraftTypeByRegion: Record<string, SegmentData[]>;
+  applicationByRegion: Record<string, SegmentData[]>;
+  equipmentByRegion: Record<string, SegmentData[]>;
 }
 
 interface UseMarketDataResult {
