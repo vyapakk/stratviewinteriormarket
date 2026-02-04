@@ -4,20 +4,20 @@ import { MarketTrendChart } from "@/components/dashboard/MarketTrendChart";
 import { SegmentPieChart } from "@/components/dashboard/SegmentPieChart";
 import { RegionalBarChart } from "@/components/dashboard/RegionalBarChart";
 import { ComparisonTable } from "@/components/dashboard/ComparisonTable";
-import { YearSelector } from "@/components/dashboard/YearSelector";
 import { DrillDownModal } from "@/components/dashboard/DrillDownModal";
+import { StackedBarChart } from "@/components/dashboard/StackedBarChart";
 import { useDrillDown } from "@/hooks/useDrillDown";
 import { YearlyData, SegmentData, MarketData, calculateCAGR } from "@/hooks/useMarketData";
-import { MainTabType } from "@/components/dashboard/MainNavigation";
+
+type SegmentType = "overview" | "endUser" | "aircraft" | "region" | "application" | "equipment";
 
 interface SegmentDetailTabProps {
-  segmentType: MainTabType;
+  segmentType: SegmentType;
   segmentData: SegmentData[];
   totalMarket: YearlyData[];
   marketData: MarketData;
   title: string;
   selectedYear: number;
-  onYearChange: (year: number) => void;
 }
 
 export function SegmentDetailTab({
@@ -27,7 +27,6 @@ export function SegmentDetailTab({
   marketData,
   title,
   selectedYear,
-  onYearChange,
 }: SegmentDetailTabProps) {
   const { drillDownState, openDrillDown, closeDrillDown } = useDrillDown();
 
@@ -48,6 +47,48 @@ export function SegmentDetailTab({
   }, 0);
 
   const cagr = calculateCAGR(value2024Total, value2034Total, 10);
+
+  // Calculate OE/Aftermarket breakdown by segment (for End User tab)
+  const getOEAftermarketBreakdown = (segments: SegmentData[]) => {
+    const oeData = marketData.endUser.find((s) => s.name.includes("OE"))?.data ?? [];
+    const aftermarketData = marketData.endUser.find((s) => s.name === "Aftermarket")?.data ?? [];
+    const totalMarketData = marketData.totalMarket;
+
+    return segments.map((segment) => {
+      const segmentValue = segment.data.find((d) => d.year === selectedYear)?.value ?? 0;
+      const totalMarketValue = totalMarketData.find((d) => d.year === selectedYear)?.value ?? 1;
+      const oeValue = oeData.find((d) => d.year === selectedYear)?.value ?? 0;
+      const aftermarketValue = aftermarketData.find((d) => d.year === selectedYear)?.value ?? 0;
+
+      // Calculate proportional OE and Aftermarket for this segment
+      const oeRatio = oeValue / totalMarketValue;
+      const aftermarketRatio = aftermarketValue / totalMarketValue;
+
+      // Generate full yearly data for drill-down
+      const oeFullData = segment.data.map((d) => {
+        const yearTotal = totalMarketData.find((t) => t.year === d.year)?.value ?? 1;
+        const yearOE = oeData.find((o) => o.year === d.year)?.value ?? 0;
+        return { year: d.year, value: d.value * (yearOE / yearTotal) };
+      });
+
+      const aftermarketFullData = segment.data.map((d) => {
+        const yearTotal = totalMarketData.find((t) => t.year === d.year)?.value ?? 1;
+        const yearAftermarket = aftermarketData.find((a) => a.year === d.year)?.value ?? 0;
+        return { year: d.year, value: d.value * (yearAftermarket / yearTotal) };
+      });
+
+      return {
+        name: segment.name,
+        oe: segmentValue * oeRatio,
+        aftermarket: segmentValue * aftermarketRatio,
+        oeFullData,
+        aftermarketFullData,
+      };
+    });
+  };
+
+  const aircraftTypeBreakdown = segmentType === "endUser" ? getOEAftermarketBreakdown(marketData.aircraftType) : [];
+  const regionBreakdown = segmentType === "endUser" ? getOEAftermarketBreakdown(marketData.region) : [];
 
   // Get related segments for drill-down
   const getRelatedSegmentsForDrillDown = (segmentName: string) => {
@@ -93,13 +134,22 @@ export function SegmentDetailTab({
     openDrillDown(segmentName, data, color, getRelatedSegmentsForDrillDown(segmentName));
   };
 
+  // Handle drill-down for stacked bar chart
+  const handleStackedBarClick = (
+    categoryName: string,
+    endUserType: "OE" | "Aftermarket",
+    value: number,
+    fullData?: YearlyData[]
+  ) => {
+    const color = endUserType === "OE" ? "hsl(192, 95%, 55%)" : "hsl(38, 92%, 55%)";
+    const displayName = `${categoryName} - ${endUserType}`;
+    if (fullData) {
+      openDrillDown(displayName, fullData, color, undefined);
+    }
+  };
+
   return (
     <div className="space-y-8">
-      {/* Year Selector */}
-      <div className="flex justify-end">
-        <YearSelector value={selectedYear} onChange={onYearChange} />
-      </div>
-
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <KPICard
@@ -149,14 +199,36 @@ export function SegmentDetailTab({
         />
       </div>
 
-      {/* Bar Chart */}
-      <RegionalBarChart
-        data={segmentData}
-        year={selectedYear}
-        title={`${title} Distribution`}
-        subtitle={`Market size by ${title.toLowerCase()} in ${selectedYear}`}
-        onBarClick={handleBarClick}
-      />
+      {/* End User Specific: Stacked Bar Charts for OE/Aftermarket breakdown */}
+      {segmentType === "endUser" && (
+        <>
+          <StackedBarChart
+            data={aircraftTypeBreakdown}
+            year={selectedYear}
+            title="OE vs Aftermarket by Aircraft Type"
+            subtitle={`${selectedYear} breakdown showing OE and Aftermarket distribution`}
+            onSegmentClick={handleStackedBarClick}
+          />
+          <StackedBarChart
+            data={regionBreakdown}
+            year={selectedYear}
+            title="OE vs Aftermarket by Region"
+            subtitle={`${selectedYear} breakdown showing OE and Aftermarket distribution`}
+            onSegmentClick={handleStackedBarClick}
+          />
+        </>
+      )}
+
+      {/* Bar Chart - Show for non-End User tabs */}
+      {segmentType !== "endUser" && (
+        <RegionalBarChart
+          data={segmentData}
+          year={selectedYear}
+          title={`${title} Distribution`}
+          subtitle={`Market size by ${title.toLowerCase()} in ${selectedYear}`}
+          onBarClick={handleBarClick}
+        />
+      )}
 
       {/* Comparison Table */}
       <ComparisonTable
