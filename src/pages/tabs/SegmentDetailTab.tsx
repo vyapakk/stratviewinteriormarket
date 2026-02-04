@@ -94,10 +94,90 @@ export function SegmentDetailTab({
     ];
   };
 
+  // Calculate Aircraft Type by Region breakdown (for Aircraft Type tab)
+  const getAircraftTypeByRegionData = () => {
+    const aircraftTypes = marketData.aircraftType;
+    const regions = marketData.region;
+    const totalMarketData = marketData.totalMarket;
+    const totalMarketValue = totalMarketData.find((d) => d.year === selectedYear)?.value ?? 1;
+
+    return aircraftTypes.map((aircraft) => {
+      const aircraftValue = aircraft.data.find((d) => d.year === selectedYear)?.value ?? 0;
+      
+      const regionSegments = regions.map((region) => {
+        const regionValue = region.data.find((d) => d.year === selectedYear)?.value ?? 0;
+        const regionRatio = regionValue / totalMarketValue;
+        const segmentValue = aircraftValue * regionRatio;
+        
+        // Generate full yearly data for drill-down
+        const fullData = aircraft.data.map((d) => {
+          const yearTotal = totalMarketData.find((t) => t.year === d.year)?.value ?? 1;
+          const yearRegion = region.data.find((r) => r.year === d.year)?.value ?? 0;
+          return { year: d.year, value: d.value * (yearRegion / yearTotal) };
+        });
+
+        return { name: region.name, value: segmentValue, fullData };
+      });
+
+      return {
+        name: aircraft.name,
+        segments: regionSegments,
+        total: regionSegments.reduce((sum, s) => sum + s.value, 0),
+      };
+    });
+  };
+
+  // Calculate Aircraft Type by OE/Aftermarket breakdown (for Aircraft Type tab)
+  const getAircraftTypeByEndUserData = () => {
+    const aircraftTypes = marketData.aircraftType;
+    const oeData = marketData.endUser.find((s) => s.name.includes("OE"))?.data ?? [];
+    const aftermarketData = marketData.endUser.find((s) => s.name === "Aftermarket")?.data ?? [];
+    const totalMarketData = marketData.totalMarket;
+    const totalMarketValue = totalMarketData.find((d) => d.year === selectedYear)?.value ?? 1;
+
+    return aircraftTypes.map((aircraft) => {
+      const aircraftValue = aircraft.data.find((d) => d.year === selectedYear)?.value ?? 0;
+      
+      const oeValue = oeData.find((d) => d.year === selectedYear)?.value ?? 0;
+      const aftermarketValue = aftermarketData.find((d) => d.year === selectedYear)?.value ?? 0;
+      const oeRatio = oeValue / totalMarketValue;
+      const aftermarketRatio = aftermarketValue / totalMarketValue;
+
+      const oeSegment = {
+        name: "OE",
+        value: aircraftValue * oeRatio,
+        fullData: aircraft.data.map((d) => {
+          const yearTotal = totalMarketData.find((t) => t.year === d.year)?.value ?? 1;
+          const yearOE = oeData.find((o) => o.year === d.year)?.value ?? 0;
+          return { year: d.year, value: d.value * (yearOE / yearTotal) };
+        }),
+      };
+
+      const aftermarketSegment = {
+        name: "Aftermarket",
+        value: aircraftValue * aftermarketRatio,
+        fullData: aircraft.data.map((d) => {
+          const yearTotal = totalMarketData.find((t) => t.year === d.year)?.value ?? 1;
+          const yearAftermarket = aftermarketData.find((a) => a.year === d.year)?.value ?? 0;
+          return { year: d.year, value: d.value * (yearAftermarket / yearTotal) };
+        }),
+      };
+
+      return {
+        name: aircraft.name,
+        segments: [oeSegment, aftermarketSegment],
+        total: oeSegment.value + aftermarketSegment.value,
+      };
+    });
+  };
+
   const aircraftTypeStackedData = segmentType === "endUser" ? getStackedBarData(marketData.aircraftType) : [];
   const regionStackedData = segmentType === "endUser" ? getStackedBarData(marketData.region) : [];
+  const aircraftByRegionData = segmentType === "aircraft" ? getAircraftTypeByRegionData() : [];
+  const aircraftByEndUserData = segmentType === "aircraft" ? getAircraftTypeByEndUserData() : [];
   const aircraftTypeNames = marketData.aircraftType.map((s) => s.name);
   const regionNames = marketData.region.map((s) => s.name);
+  const endUserNames = ["OE", "Aftermarket"];
 
   const SEGMENT_COLORS = [
     "hsl(192, 95%, 55%)",
@@ -171,8 +251,8 @@ export function SegmentDetailTab({
 
   return (
     <div className="space-y-8">
-      {/* KPI Cards - Hidden for End User tab */}
-      {segmentType !== "endUser" && (
+      {/* KPI Cards - Hidden for End User and Aircraft Type tabs */}
+      {segmentType !== "endUser" && segmentType !== "aircraft" && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <KPICard
             title={`${selectedYear} Market Size`}
@@ -246,8 +326,32 @@ export function SegmentDetailTab({
         </>
       )}
 
-      {/* Bar Chart - Show for non-End User tabs */}
-      {segmentType !== "endUser" && (
+      {/* Aircraft Type Specific: Stacked Bar Charts */}
+      {segmentType === "aircraft" && (
+        <>
+          <StackedBarChart
+            data={aircraftByRegionData}
+            year={selectedYear}
+            title="Aircraft Type by Region"
+            subtitle={`${selectedYear} breakdown - bars represent aircraft types, stacks show regions`}
+            segmentColors={SEGMENT_COLORS}
+            segmentNames={regionNames}
+            onSegmentClick={handleStackedBarClick}
+          />
+          <StackedBarChart
+            data={aircraftByEndUserData}
+            year={selectedYear}
+            title="Aircraft Type by End User"
+            subtitle={`${selectedYear} breakdown - bars represent aircraft types, stacks show OE/Aftermarket`}
+            segmentColors={SEGMENT_COLORS}
+            segmentNames={endUserNames}
+            onSegmentClick={handleStackedBarClick}
+          />
+        </>
+      )}
+
+      {/* Bar Chart - Show for non-End User and non-Aircraft tabs */}
+      {segmentType !== "endUser" && segmentType !== "aircraft" && (
         <RegionalBarChart
           data={segmentData}
           year={selectedYear}
