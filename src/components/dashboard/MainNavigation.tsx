@@ -1,12 +1,16 @@
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, Users, Plane, Globe, Layers, Settings } from "lucide-react";
+import { YearSelector } from "./YearSelector";
 
 export type MainTabType = "overview" | "endUser" | "aircraft" | "region" | "application" | "equipment";
 
 interface MainNavigationProps {
   value: MainTabType;
   onChange: (value: MainTabType) => void;
+  selectedYear?: number;
+  onYearChange?: (year: number) => void;
+  showYearSelector?: boolean;
 }
 
 const tabs = [
@@ -18,7 +22,13 @@ const tabs = [
   { id: "equipment" as const, label: "Equipment", icon: Settings },
 ];
 
-export function MainNavigation({ value, onChange }: MainNavigationProps) {
+export function MainNavigation({ 
+  value, 
+  onChange, 
+  selectedYear, 
+  onYearChange,
+  showYearSelector = false 
+}: MainNavigationProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -26,24 +36,29 @@ export function MainNavigation({ value, onChange }: MainNavigationProps) {
       transition={{ delay: 0.1 }}
       className="w-full"
     >
-      <Tabs value={value} onValueChange={(v) => onChange(v as MainTabType)} className="w-full">
-        <TabsList className="bg-secondary/50 border border-border p-1 w-full flex flex-wrap justify-start gap-1 h-auto">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2 px-4 py-2"
-              >
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.label.split("-")[0]}</span>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-      </Tabs>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <Tabs value={value} onValueChange={(v) => onChange(v as MainTabType)} className="flex-1">
+          <TabsList className="bg-secondary/50 border border-border p-1 flex flex-wrap justify-start gap-1 h-auto">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2 px-4 py-2"
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.label.split("-")[0]}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </Tabs>
+        {showYearSelector && selectedYear && onYearChange && (
+          <YearSelector value={selectedYear} onChange={onYearChange} />
+        )}
+      </div>
     </motion.div>
   );
 }

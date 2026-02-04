@@ -2,9 +2,10 @@ import { DollarSign, TrendingUp, BarChart3 } from "lucide-react";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { MarketOverviewChart } from "@/components/dashboard/MarketOverviewChart";
 import { DistributionDonutsRow } from "@/components/dashboard/DistributionDonutsRow";
-import { YearSelector } from "@/components/dashboard/YearSelector";
-import { MarketData, calculateCAGR } from "@/hooks/useMarketData";
+import { DrillDownModal } from "@/components/dashboard/DrillDownModal";
+import { MarketData, calculateCAGR, SegmentData, YearlyData } from "@/hooks/useMarketData";
 import { MainTabType } from "@/components/dashboard/MainNavigation";
+import { useDrillDown } from "@/hooks/useDrillDown";
 
 interface MarketOverviewTabProps {
   marketData: MarketData;
@@ -19,19 +20,47 @@ export function MarketOverviewTab({
   onYearChange,
   onNavigateToTab,
 }: MarketOverviewTabProps) {
+  const { drillDownState, openDrillDown, closeDrillDown } = useDrillDown();
+
   // Calculate KPI values
   const currentMarketValue = marketData.totalMarket.find((d) => d.year === selectedYear)?.value ?? 0;
   const value2024 = marketData.totalMarket.find((d) => d.year === 2024)?.value ?? 0;
   const value2034 = marketData.totalMarket.find((d) => d.year === 2034)?.value ?? 0;
   const cagr2024to2034 = calculateCAGR(value2024, value2034, 10);
 
+  // Handle slice click for drill-down modal
+  const handleSliceClick = (
+    segmentName: string,
+    segmentData: YearlyData[],
+    color: string,
+    donutType: MainTabType
+  ) => {
+    // Determine related segments based on donut type
+    let relatedSegments: { title: string; data: SegmentData[] } | undefined;
+    
+    switch (donutType) {
+      case "endUser":
+        relatedSegments = { title: "By Region", data: marketData.region };
+        break;
+      case "aircraft":
+        relatedSegments = { title: "By Application", data: marketData.application };
+        break;
+      case "region":
+        relatedSegments = { title: "By End User", data: marketData.endUser };
+        break;
+      case "application":
+        relatedSegments = { title: "By Aircraft Type", data: marketData.aircraftType };
+        break;
+      case "equipment":
+        relatedSegments = { title: "By End User", data: marketData.endUser };
+        break;
+    }
+
+    openDrillDown(segmentName, segmentData, color, relatedSegments);
+  };
+
   return (
     <div className="space-y-8">
-      {/* Year Selector */}
-      <div className="flex justify-end">
-        <YearSelector value={selectedYear} onChange={onYearChange} />
-      </div>
-
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <KPICard
@@ -74,7 +103,7 @@ export function MarketOverviewTab({
           {selectedYear} Market Distribution
         </h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Click any chart to see detailed analysis
+          Click any slice to see detailed analysis
         </p>
         <DistributionDonutsRow
           endUserData={marketData.endUser}
@@ -84,8 +113,19 @@ export function MarketOverviewTab({
           equipmentData={marketData.furnishedEquipment}
           year={selectedYear}
           onDonutClick={onNavigateToTab}
+          onSliceClick={handleSliceClick}
         />
       </div>
+
+      {/* Drill-Down Modal */}
+      <DrillDownModal
+        isOpen={drillDownState.isOpen}
+        onClose={closeDrillDown}
+        segmentName={drillDownState.segmentName}
+        segmentData={drillDownState.segmentData}
+        color={drillDownState.color}
+        relatedSegments={drillDownState.relatedSegments}
+      />
     </div>
   );
 }

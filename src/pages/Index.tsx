@@ -89,7 +89,13 @@ const Index = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Main Navigation */}
         <div className="mb-8">
-          <MainNavigation value={activeTab} onChange={setActiveTab} />
+          <MainNavigation 
+            value={activeTab} 
+            onChange={setActiveTab}
+            selectedYear={selectedYear}
+            onYearChange={setSelectedYear}
+            showYearSelector
+          />
         </div>
 
         {/* Tab Content */}

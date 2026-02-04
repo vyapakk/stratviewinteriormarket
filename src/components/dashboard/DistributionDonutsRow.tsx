@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   PieChart,
@@ -5,8 +6,9 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
+  Sector,
 } from "recharts";
-import { SegmentData } from "@/hooks/useMarketData";
+import { SegmentData, YearlyData } from "@/hooks/useMarketData";
 import { MainTabType } from "./MainNavigation";
 
 interface DistributionDonutsRowProps {
@@ -17,6 +19,12 @@ interface DistributionDonutsRowProps {
   equipmentData: SegmentData[];
   year: number;
   onDonutClick?: (tabType: MainTabType) => void;
+  onSliceClick?: (
+    segmentName: string,
+    segmentData: YearlyData[],
+    color: string,
+    donutType: MainTabType
+  ) => void;
 }
 
 const chartColors = [
@@ -36,14 +44,54 @@ interface MiniDonutProps {
   title: string;
   tabType: MainTabType;
   onClick?: (tabType: MainTabType) => void;
+  onSliceClick?: (
+    segmentName: string,
+    segmentData: YearlyData[],
+    color: string,
+    donutType: MainTabType
+  ) => void;
   delay: number;
 }
 
-function MiniDonut({ data, year, title, tabType, onClick, delay }: MiniDonutProps) {
+// Render active shape with expansion effect
+const renderActiveShape = (props: any) => {
+  const {
+    cx,
+    cy,
+    innerRadius,
+    outerRadius,
+    startAngle,
+    endAngle,
+    fill,
+  } = props;
+
+  return (
+    <g>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 8}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        style={{
+          filter: "drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))",
+          cursor: "pointer",
+        }}
+      />
+    </g>
+  );
+};
+
+function MiniDonut({ data, year, title, tabType, onClick, onSliceClick, delay }: MiniDonutProps) {
+  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
+
   const pieData = data.map((segment, index) => ({
     name: segment.name,
     value: segment.data.find((d) => d.year === year)?.value ?? 0,
     color: chartColors[index % chartColors.length],
+    fullData: segment.data,
   }));
 
   const total = pieData.reduce((sum, item) => sum + item.value, 0);
@@ -58,10 +106,27 @@ function MiniDonut({ data, year, title, tabType, onClick, delay }: MiniDonutProp
           <p className="text-muted-foreground">
             ${item.value.toLocaleString()}M ({percentage}%)
           </p>
+          <p className="text-primary text-[10px] mt-1">Click to drill down</p>
         </div>
       );
     }
     return null;
+  };
+
+  const handlePieClick = (data: any, index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const segment = pieData[index];
+    if (segment && onSliceClick) {
+      onSliceClick(segment.name, segment.fullData, segment.color, tabType);
+    }
+  };
+
+  const onPieEnter = (_: any, index: number) => {
+    setActiveIndex(index);
+  };
+
+  const onPieLeave = () => {
+    setActiveIndex(undefined);
   };
 
   return (
@@ -86,6 +151,12 @@ function MiniDonut({ data, year, title, tabType, onClick, delay }: MiniDonutProp
               dataKey="value"
               stroke="hsl(222, 47%, 6%)"
               strokeWidth={1}
+              activeIndex={activeIndex}
+              activeShape={renderActiveShape}
+              onMouseEnter={onPieEnter}
+              onMouseLeave={onPieLeave}
+              onClick={handlePieClick}
+              style={{ cursor: "pointer" }}
             >
               {pieData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
@@ -123,6 +194,7 @@ export function DistributionDonutsRow({
   equipmentData,
   year,
   onDonutClick,
+  onSliceClick,
 }: DistributionDonutsRowProps) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -132,6 +204,7 @@ export function DistributionDonutsRow({
         title="End User"
         tabType="endUser"
         onClick={onDonutClick}
+        onSliceClick={onSliceClick}
         delay={0.1}
       />
       <MiniDonut
@@ -140,6 +213,7 @@ export function DistributionDonutsRow({
         title="Aircraft Type"
         tabType="aircraft"
         onClick={onDonutClick}
+        onSliceClick={onSliceClick}
         delay={0.15}
       />
       <MiniDonut
@@ -148,6 +222,7 @@ export function DistributionDonutsRow({
         title="Region"
         tabType="region"
         onClick={onDonutClick}
+        onSliceClick={onSliceClick}
         delay={0.2}
       />
       <MiniDonut
@@ -156,6 +231,7 @@ export function DistributionDonutsRow({
         title="Application"
         tabType="application"
         onClick={onDonutClick}
+        onSliceClick={onSliceClick}
         delay={0.25}
       />
       <MiniDonut
@@ -164,6 +240,7 @@ export function DistributionDonutsRow({
         title="Equipment"
         tabType="equipment"
         onClick={onDonutClick}
+        onSliceClick={onSliceClick}
         delay={0.3}
       />
     </div>
