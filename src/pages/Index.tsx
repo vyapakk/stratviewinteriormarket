@@ -12,7 +12,7 @@ import { useMarketData } from "@/hooks/useMarketData";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
-  const [selectedYear, setSelectedYear] = useState(2024);
+  const [selectedYear, setSelectedYear] = useState(2025);
   const [activeTab, setActiveTab] = useState<MainTabType>("overview");
   
   // Fetch market data from external JSON
