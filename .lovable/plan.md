@@ -1,182 +1,153 @@
 
-
-# Dashboard Navigation Restructure Plan
+# Year Selector Repositioning and Enhanced Donut Charts Plan
 
 ## Overview
 
-Transform the current single-page dashboard into a multi-tab navigation structure with 6 main sections. Each tab will provide focused analysis for its specific segment type.
+This plan implements two key improvements to the Market Overview tab:
+1. Move the year selector to be inline with the main navigation tabs
+2. Upgrade the mini donut charts to have the same interactive features as SegmentPieChart (slice expansion on hover, drill-down modal on click)
 
 ---
 
-## New Navigation Structure
+## Change 1: Year Selector Inline with Navigation
 
+### Current Layout
 ```text
-+------------------+------------+---------------+----------+-------------+-----------+
-| Market Overview  | End-User   | Aircraft-Type | Region   | Application | Equipment |
-+------------------+------------+---------------+----------+-------------+-----------+
++----------------------------------------------------------+
+| Market Overview | End-User | Aircraft | Region | ...     |
++----------------------------------------------------------+
+
+                                    [ Year: 2024 ▼ ]  <-- separate row
 ```
 
----
+### New Layout
+```text
++----------------------------------------------------------------------+
+| Market Overview | End-User | Aircraft | Region | ...   [ Year: 2024 ▼ ]
++----------------------------------------------------------------------+
+```
 
-## Tab 1: Market Overview (Home Tab)
+### Files to Modify
 
-This is the main landing page with a comprehensive market summary.
+**1. MainNavigation.tsx**
+- Add optional props: `selectedYear`, `onYearChange`, `showYearSelector`
+- Wrap the existing content with a flex container
+- Conditionally render YearSelector on the right side when props are provided
 
-### Components:
+**2. Index.tsx**
+- Pass year selector props to MainNavigation component
 
-1. **Dual-Line Chart** (Market Size + YoY Growth %)
-   - X-axis: Years (2016-2034)
-   - Left Y-axis: Market size in US$ Millions
-   - Right Y-axis: YoY Growth %
-   - Line 1: Market size trend
-   - Line 2: YoY growth percentage for each year
-
-2. **KPI Boxes** (3 cards)
-   - Total Market of Selected Year (with $ value)
-   - CAGR through 2034
-   - Forecasted Market in 2034
-
-3. **Donut Charts Row** (5 charts showing distribution in selected year)
-   - End User distribution
-   - Aircraft Type distribution
-   - Region distribution
-   - Application distribution
-   - Equipment distribution
-
-4. **Year Selector** - dropdown/slider to change the selected year
+**3. MarketOverviewTab.tsx**
+- Remove the standalone YearSelector component and its wrapper
 
 ---
 
-## Tabs 2-6: Segment Detail Pages
+## Change 2: Enhanced Donut Charts with Drill-Down
 
-Each segment tab (End-User, Aircraft-Type, Region, Application, Equipment) will show:
+### Current Behavior
+- Simple hover effect on card border
+- Clicking navigates to segment detail tab
+- No individual slice interaction
 
-1. **KPI Cards** - Total for segment, CAGR, 2034 forecast
-2. **Stacked Area Chart** - Trend by segment breakdown (existing MarketTrendChart style)
-3. **Pie Chart** - Distribution for selected year
-4. **Bar Chart** - Horizontal bars showing each sub-segment
-5. **Comparison Table** - Growth analysis table
+### New Behavior (matching SegmentPieChart)
+- Individual slice expands on hover (outerRadius + 8)
+- Detailed tooltip showing value, percentage, and "Click to drill down" hint
+- Clicking a slice opens the DrillDownModal with that segment's detailed data
+- Clicking outside pie area (on card) still navigates to tab
 
-These pages will reuse existing components with the appropriate data slice.
+### Files to Modify
 
----
+**1. DistributionDonutsRow.tsx**
 
-## Implementation Steps
+Add to MiniDonut component:
+- Import `Sector` from recharts for active shape rendering
+- Add `useState` for `activeIndex` to track which slice is hovered
+- Add `renderActiveShape` function that renders expanded slice
+- Add props to Pie: `activeIndex`, `activeShape`, `onMouseEnter`, `onMouseLeave`, `onClick`
+- Update tooltip to show "Click to drill down" hint
+- Add new prop for slice click handling: `onSliceClick`
 
-### Step 1: Create Navigation Component
+New props for component:
+```typescript
+onSliceClick?: (
+  segmentName: string, 
+  segmentData: YearlyData[], 
+  color: string,
+  relatedSegments?: { title: string; data: SegmentData[] }
+) => void;
+```
 
-Create `src/components/dashboard/MainNavigation.tsx`:
-- Horizontal tab navigation below the header
-- 6 tabs: Market Overview, End-User, Aircraft-Type, Region, Application, Equipment
-- Uses the same styling pattern as current SegmentTabs
-- Tab state managed via URL or local state
+**2. MarketOverviewTab.tsx**
 
-### Step 2: Create Market Overview Page Components
-
-**Create `src/components/dashboard/MarketOverviewChart.tsx`:**
-- New dual-axis line chart with Recharts
-- Shows market size (line 1) and YoY growth % (line 2)
-- Uses ComposedChart from Recharts with Line + Line
-- Custom tooltip showing both values
-- Same styling as existing charts
-
-**Create `src/components/dashboard/DistributionDonutsRow.tsx`:**
-- Responsive grid of 5 smaller donut charts
-- Each shows one segment distribution
-- Clickable to navigate to that segment's detail tab
-
-### Step 3: Create Tab Content Components
-
-**Create `src/pages/tabs/MarketOverviewTab.tsx`:**
-- Contains the dual-line chart
-- 3 KPI boxes (Selected Year Market, CAGR, 2034 Forecast)
-- 5 donut charts in a row
-- Year selector
-
-**Create `src/pages/tabs/SegmentDetailTab.tsx`:**
-- Reusable component for End-User, Aircraft-Type, Region, Application, Equipment
-- Props: segmentType, segmentData, title
-- Includes: KPI cards, trend chart, pie chart, bar chart, comparison table
-
-### Step 4: Update Index Page
-
-Modify `src/pages/Index.tsx`:
-- Add MainNavigation component after DashboardHeader
-- Use state to track active tab
-- Conditionally render tab content based on selection
-- Remove old SegmentTabs component
-
-### Step 5: Create Helper for YoY Calculation
-
-Add to `src/hooks/useMarketData.ts`:
-- Function to calculate YoY growth % for each year
-- Returns array of { year, value, yoyGrowth }
-
----
-
-## File Changes Summary
-
-### New Files:
-- `src/components/dashboard/MainNavigation.tsx` - Main 6-tab navigation
-- `src/components/dashboard/MarketOverviewChart.tsx` - Dual-axis line chart
-- `src/components/dashboard/DistributionDonutsRow.tsx` - Row of 5 mini donuts
-- `src/pages/tabs/MarketOverviewTab.tsx` - Market Overview content
-- `src/pages/tabs/SegmentDetailTab.tsx` - Reusable segment detail view
-
-### Modified Files:
-- `src/pages/Index.tsx` - Add navigation, restructure layout
-- `src/hooks/useMarketData.ts` - Add YoY calculation helper
-
-### Files to Remove/Deprecate:
-- `src/components/dashboard/SegmentTabs.tsx` - Replaced by MainNavigation
+- Import `useDrillDown` hook and `DrillDownModal` component
+- Add drill-down state management
+- Create handler function `handleDonutSliceClick` that:
+  - Receives segment info from the clicked slice
+  - Determines related segments based on which donut was clicked
+  - Opens the DrillDownModal
+- Pass the handler to DistributionDonutsRow
+- Render DrillDownModal at the bottom of the component
 
 ---
 
 ## Technical Details
 
-### Dual-Axis Line Chart Implementation
+### Slice Expansion on Hover
+
+The active shape feature uses Recharts' `Sector` component to render an expanded version of the hovered slice:
 
 ```text
-Recharts ComposedChart with:
-- Line (dataKey="value") for market size
-- Line (dataKey="yoyGrowth") for YoY %
-- YAxis yAxisId="left" for market size ($B)
-- YAxis yAxisId="right" for growth (%)
-- Custom tooltip showing both metrics
+Normal slice: outerRadius = 55
+Hovered slice: outerRadius = 55 + 8 = 63
+
+Additional styling:
+- Drop shadow filter for depth
+- Cursor pointer for interactivity
 ```
 
-### YoY Growth Calculation
+### Click Handling Strategy
 
-```text
-For each year:
-  yoyGrowth = ((currentYearValue - previousYearValue) / previousYearValue) * 100
+Two distinct click actions:
 
-Year 2016 will show N/A or 0% (no previous year data)
-```
+| Click Target | Action |
+|--------------|--------|
+| Pie slice | Opens DrillDownModal with segment details |
+| Card (outside pie) | Navigates to segment detail tab |
 
-### Navigation State Management
+Implementation uses `stopPropagation()` on pie click to prevent both actions firing.
 
-Use React useState for tab state (no routing needed):
-- `activeTab: "overview" | "endUser" | "aircraft" | "region" | "application" | "equipment"`
-- Tab changes update state and render appropriate content
+### Related Segments for Drill-Down
 
-### Responsive Layout
+Each donut type will have appropriate related segments:
 
-- Donut charts row: 5 columns on desktop, 3 on tablet, 1-2 on mobile
-- Navigation tabs: horizontal scroll on mobile if needed
-- KPI boxes: grid layout, stacks on smaller screens
+| Donut Type | Related Segments in Modal |
+|------------|--------------------------|
+| End User | Regions for this End User |
+| Aircraft Type | Applications for this Aircraft Type |
+| Region | Countries in this Region |
+| Application | Aircraft Types by Application |
+| Equipment | End Users by Equipment |
 
 ---
 
-## Component Reuse
+## File Changes Summary
 
-Existing components that will be reused:
-- `KPICard` - For all metric boxes
-- `SegmentPieChart` - For individual segment views
-- `RegionalBarChart` - For bar charts (rename to generic SegmentBarChart)
-- `MarketTrendChart` - For segment trend views
-- `ComparisonTable` - For growth analysis
-- `YearSelector` - For year selection
-- `DashboardHeader` - Header remains unchanged
-- `DrillDownModal` - Drill-down functionality preserved
+| File | Action | Changes |
+|------|--------|---------|
+| `MainNavigation.tsx` | Modify | Add year selector props and inline rendering with flexbox |
+| `Index.tsx` | Modify | Pass `selectedYear` and `onYearChange` props to MainNavigation |
+| `MarketOverviewTab.tsx` | Modify | Remove year selector, add useDrillDown hook and DrillDownModal |
+| `DistributionDonutsRow.tsx` | Modify | Add hover expansion, slice click handler, enhanced tooltip |
 
+---
+
+## Expected Behavior After Changes
+
+1. **Year Selector**: Appears inline on the right side of the navigation bar, visible on all tabs
+2. **Donut Hover**: Individual slices expand outward when hovered, with a subtle shadow effect
+3. **Donut Click**: Clicking any slice (e.g., "OE" in End User donut) opens the Deep Dive modal showing:
+   - KPI summary (2024 Value, 2034 Forecast, CAGR, YoY Growth)
+   - Historical and forecast trend chart
+   - Related segments bar chart (clickable for further drill-down)
+   - Year-over-year data table
+4. **Card Click**: Clicking outside the pie chart area still navigates to that segment's detail tab
