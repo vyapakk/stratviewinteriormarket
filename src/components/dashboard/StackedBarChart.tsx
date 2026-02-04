@@ -70,8 +70,10 @@ export function StackedBarChart({
       const hoveredEntry = payload.find((p: any) => p.name === activeSegment.segmentName);
       if (!hoveredEntry) return null;
 
-      const total = payload.reduce((sum: number, p: any) => sum + (p.value || 0), 0);
-      const percent = total > 0 ? ((hoveredEntry.value / total) * 100).toFixed(1) : "0";
+      // Get the bar total from the data entry
+      const dataEntry = chartData.find((d) => d.name === label);
+      const barTotal = dataEntry?.total ?? payload.reduce((sum: number, p: any) => sum + (p.value || 0), 0);
+      const percent = barTotal > 0 ? ((hoveredEntry.value / barTotal) * 100).toFixed(1) : "0";
 
       return (
         <div className="rounded-lg border border-border bg-popover p-4 shadow-lg">
@@ -86,6 +88,12 @@ export function StackedBarChart({
                 ${hoveredEntry.value?.toLocaleString()}M
               </span>
               <span className="text-muted-foreground">({percent}% of {label})</span>
+            </div>
+            <div className="mt-1 pt-1 border-t border-border flex items-center gap-2 text-muted-foreground">
+              <span>Bar Total:</span>
+              <span className="font-mono font-medium text-foreground">
+                ${barTotal.toLocaleString()}M
+              </span>
             </div>
           </div>
           {onSegmentClick && (
