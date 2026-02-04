@@ -1,83 +1,147 @@
 
+# Fix Stacked Bar Chart Data and Tooltip Display
 
-# Dashboard Font & End User Tab Updates
+## Problem Analysis
 
-## Overview
+### Issue 1: Data Calculation Errors
+The current `getStackedBarData` function uses an incorrect proportional calculation method. It applies stack segment ratios from the total market to primary segment values, which results in inaccurate stacked totals that don't match the actual primary segment values.
 
-This plan implements two changes:
-1. Switch the entire dashboard font from Inter to Poppins
-2. Update the stacked bar chart tooltips to show the year, and remove KPI cards from the End User tab
+**Current flawed logic:**
+- Primary value (e.g., Narrow Body) = $7,724.6M
+- Stack ratio = North America value / Total Market = 48.2%
+- Calculated segment = $7,724.6M x 48.2% = $3,724M
 
----
+This approach causes the sum of all stacks to not equal the primary segment's actual value.
 
-## Part 1: Poppins Font for Entire Dashboard
+**Correct approach:**
+The stacked segments should be calculated so they proportionally sum to exactly the primary segment value. Each stack segment's proportion within that primary bar should be based on the stack segment's share of the total market.
 
-### Current State
-- The dashboard uses `Inter` as the primary font and `JetBrains Mono` for monospaced numbers
-- Font is imported via Google Fonts in `src/index.css`
+### Issue 2: Missing Bar Total in Tooltip
+The tooltip currently only shows:
+- Segment name and value
+- Percentage of bar
 
-### Changes Required
-
-**File: `src/index.css`**
-- Update the Google Fonts import to include Poppins instead of Inter
-- Change the `html` font-family from `'Inter'` to `'Poppins'`
-
-```css
-/* Before */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700...');
-
-html {
-  font-family: 'Inter', system-ui, sans-serif;
-}
-
-/* After */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700...');
-
-html {
-  font-family: 'Poppins', system-ui, sans-serif;
-}
-```
+It should also display:
+- **Total bar value** (sum of all stacks in that bar)
 
 ---
 
-## Part 2: Stacked Bar Chart Tooltip with Year
+## Solution
 
-### Current Tooltip Display
-```
-OE - North America
-$1,234M (35% of OE)
-```
-
-### Updated Tooltip Display
-```
-OE - North America (2024)
-$1,234M (35% of OE)
-```
-
-**File: `src/components/dashboard/StackedBarChart.tsx`**
-- Update the `CustomTooltip` component to include the `year` prop in the display
-- Change the tooltip title from `{label} - {segmentName}` to `{label} - {segmentName} ({year})`
-
----
-
-## Part 3: Remove KPI Cards from End User Tab
-
-### Current State
-- The End User tab displays 3 KPI cards at the top (same as other segment tabs)
-
-### Changes Required
+### Part 1: Fix Data Calculation Logic
 
 **File: `src/pages/tabs/SegmentDetailTab.tsx`**
-- Wrap the KPI Cards section in a conditional that excludes `segmentType === "endUser"`
-- Keep KPI cards for all other segment types (overview, aircraft, region, application, equipment)
+
+Update the `getStackedBarData` function to ensure stacked segments sum correctly to the primary segment value:
+
+```typescript
+const getStackedBarData = (
+  primarySegments: SegmentData[],
+  stackSegments: SegmentData[]
+) => {
+  const totalMarketData = marketData.totalMarket;
+  const totalMarketValue = totalMarketData.find((d) => d.year === selectedYear)?.value ?? 1;
+
+  // Calculate the total of all stack segments for the selected year
+  const stackTotal = stackSegments.reduce((sum, stack) => {
+    return sum + (stack.data.find((d) => d.year === selectedYear)?.value ?? 0);
+  }, 0);
+
+  return primarySegments.map((primary) => {
+    const primaryValue = primary.data.find((d) => d.year === selectedYear)?.value ?? 0;
+
+    const segments = stackSegments.map((stack) => {
+      const stackValue = stack.data.find((d) => d.year === selectedYear)?.value ?? 0;
+      // Calculate proportion based on stack segment's share of stack total
+      const stackRatio = stackTotal > 0 ? stackValue / stackTotal : 0;
+      // Apply ratio to primary value so segments sum to primaryValue
+      const segmentValue = primaryValue * stackRatio;
+
+      // Similar calculation for full historical data
+      const fullData = primary.data.map((d) => {
+        const yearStackTotal = stackSegments.reduce((sum, s) => {
+          return sum + (s.data.find((sd) => sd.year === d.year)?.value ?? 0);
+        }, 0);
+        const yearStackValue = stack.data.find((s) => s.year === d.year)?.value ?? 0;
+        const yearStackRatio = yearStackTotal > 0 ? yearStackValue / yearStackTotal : 0;
+        return { year: d.year, value: d.value * yearStackRatio };
+      });
+
+      return { name: stack.name, value: segmentValue, fullData };
+    });
+
+    return {
+      name: primary.name,
+      segments,
+      total: primaryValue, // Use actual primary value as total
+    };
+  });
+};
+```
+
+Apply the same fix to `getEndUserStackedData` function for consistency.
 
 ---
 
-## File Changes Summary
+### Part 2: Update Tooltip to Show Bar Total
 
-| File | Change |
-|------|--------|
-| `src/index.css` | Replace Inter font with Poppins in import and html selector |
-| `src/components/dashboard/StackedBarChart.tsx` | Add year to tooltip title display |
-| `src/pages/tabs/SegmentDetailTab.tsx` | Conditionally hide KPI cards for endUser segment |
+**File: `src/components/dashboard/StackedBarChart.tsx`**
 
+Modify the `CustomTooltip` component to include the bar total:
+
+**Before:**
+```jsx
+<span className="font-mono font-medium text-foreground">
+  ${hoveredEntry.value?.toLocaleString()}M
+</span>
+<span className="text-muted-foreground">({percent}% of {label})</span>
+```
+
+**After:**
+```jsx
+<div className="flex items-center gap-2">
+  <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: hoveredEntry.fill }} />
+  <span className="font-mono font-medium text-foreground">
+    ${hoveredEntry.value?.toLocaleString()}M
+  </span>
+  <span className="text-muted-foreground">({percent}% of {label})</span>
+</div>
+<div className="mt-1 pt-1 border-t border-border flex items-center gap-2 text-muted-foreground">
+  <span>Bar Total:</span>
+  <span className="font-mono font-medium text-foreground">
+    ${total.toLocaleString()}M
+  </span>
+</div>
+```
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/pages/tabs/SegmentDetailTab.tsx` | Fix `getStackedBarData` and `getEndUserStackedData` calculation logic |
+| `src/components/dashboard/StackedBarChart.tsx` | Update `CustomTooltip` to display bar total |
+
+---
+
+## Technical Details
+
+### Data Flow After Fix
+1. Primary segment value (e.g., Narrow Body = $7,724.6M)
+2. Stack segments share calculated from stack total (not total market)
+   - NA: 48.2%, Europe: 25.9%, APAC: 20.5%, RoW: 5.4%
+3. Calculated stacks:
+   - NA: $7,724.6M x 48.2% = $3,724M
+   - Europe: $7,724.6M x 25.9% = $2,001M
+   - APAC: $7,724.6M x 20.5% = $1,584M
+   - RoW: $7,724.6M x 5.4% = $417M
+4. Sum = $7,726M (matches primary value within rounding)
+
+### Tooltip Display Format
+```
+Narrow Body - North America (2025)
+  [color] $3,724M (48.2% of Narrow Body)
+  ─────────────────────────────────
+  Bar Total: $7,725M
+```
