@@ -1,199 +1,83 @@
 
 
-# End User Tab Enhancement Plan
+# Dashboard Font & End User Tab Updates
 
 ## Overview
 
-This plan implements two key changes:
-1. Remove duplicate year selectors from individual tabs (use only the universal one in navigation)
-2. Enhance the End User tab with two new stacked horizontal bar charts showing OE/Aftermarket breakdown by Aircraft Type and by Region
+This plan implements two changes:
+1. Switch the entire dashboard font from Inter to Poppins
+2. Update the stacked bar chart tooltips to show the year, and remove KPI cards from the End User tab
 
 ---
 
-## Part 1: Remove Duplicate Year Selectors
+## Part 1: Poppins Font for Entire Dashboard
 
 ### Current State
-- Year selector appears in MainNavigation (universal)
-- Year selector also appears separately in SegmentDetailTab
+- The dashboard uses `Inter` as the primary font and `JetBrains Mono` for monospaced numbers
+- Font is imported via Google Fonts in `src/index.css`
+
+### Changes Required
+
+**File: `src/index.css`**
+- Update the Google Fonts import to include Poppins instead of Inter
+- Change the `html` font-family from `'Inter'` to `'Poppins'`
+
+```css
+/* Before */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700...');
+
+html {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* After */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700...');
+
+html {
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+```
+
+---
+
+## Part 2: Stacked Bar Chart Tooltip with Year
+
+### Current Tooltip Display
+```
+OE - North America
+$1,234M (35% of OE)
+```
+
+### Updated Tooltip Display
+```
+OE - North America (2024)
+$1,234M (35% of OE)
+```
+
+**File: `src/components/dashboard/StackedBarChart.tsx`**
+- Update the `CustomTooltip` component to include the `year` prop in the display
+- Change the tooltip title from `{label} - {segmentName}` to `{label} - {segmentName} ({year})`
+
+---
+
+## Part 3: Remove KPI Cards from End User Tab
+
+### Current State
+- The End User tab displays 3 KPI cards at the top (same as other segment tabs)
 
 ### Changes Required
 
 **File: `src/pages/tabs/SegmentDetailTab.tsx`**
-- Remove the YearSelector component import
-- Remove the year selector wrapper div (lines 98-101)
-- Keep the `selectedYear` prop but remove `onYearChange` usage within the tab
-
----
-
-## Part 2: Add Stacked Bar Charts to End User Tab
-
-### Data Challenge
-
-The current JSON data structure has:
-- OE and Aftermarket totals by year
-- Aircraft Type totals by year
-- Region totals by year
-
-But it does NOT have cross-dimensional data like "OE by Aircraft Type" or "Aftermarket by Region".
-
-### Solution
-
-Add new cross-dimensional data sections to `marketData.json`:
-```json
-{
-  "endUserByAircraftType": [
-    {
-      "name": "Narrow Body",
-      "oe": [{ "year": 2024, "value": X }, ...],
-      "aftermarket": [{ "year": 2024, "value": Y }, ...]
-    },
-    ...
-  ],
-  "endUserByRegion": [
-    {
-      "name": "North America",
-      "oe": [{ "year": 2024, "value": X }, ...],
-      "aftermarket": [{ "year": 2024, "value": Y }, ...]
-    },
-    ...
-  ]
-}
-```
-
-For the initial implementation, we'll estimate these values using proportional distribution based on existing data.
-
----
-
-## New Component: StackedBarChart
-
-**File: `src/components/dashboard/StackedBarChart.tsx`**
-
-A new reusable component for stacked horizontal bar charts:
-
-```text
-+------------------------------------------------------------------------+
-| Title                                                      [Download]  |
-| Subtitle                                                               |
-+------------------------------------------------------------------------+
-|                                                                        |
-|  Narrow Body    |████████████████████████████████|██████████|          |
-|                                                                        |
-|  Wide-Body      |████████████████████████████|█████████████|           |
-|                                                                        |
-|  Regional       |████████████████|██████|                              |
-|                                                                        |
-|  Business Jets  |██████████████|█████████|                             |
-|                                                                        |
-+------------------------------------------------------------------------+
-|                   [████] OE   [████] Aftermarket                       |
-+------------------------------------------------------------------------+
-```
-
-### Component Props
-
-```typescript
-interface StackedBarChartProps {
-  data: {
-    name: string;
-    oe: number;
-    aftermarket: number;
-    oeFullData?: YearlyData[];
-    aftermarketFullData?: YearlyData[];
-  }[];
-  year: number;
-  title: string;
-  subtitle?: string;
-  onSegmentClick?: (segmentName: string, endUserType: 'OE' | 'Aftermarket', value: number) => void;
-}
-```
-
-### Features
-- Horizontal stacked bars using Recharts BarChart
-- OE portion in cyan color, Aftermarket in amber color
-- Custom tooltip showing both values and percentages
-- Hover effect highlighting the hovered segment
-- Click-to-drill-down functionality
-- Download button for chart export
-
----
-
-## End User Tab Layout
-
-**Updated layout for End User tab:**
-
-```text
-+------------------------------------------------------------------+
-| [KPI Cards Row - 3 cards]                                        |
-+------------------------------------------------------------------+
-|                                |                                  |
-| [Line Chart - Market Trend]    | [Donut Chart - OE vs Aftermarket]|
-| (2016-2034, OE + Aftermarket)  | (Selected Year Distribution)     |
-|                                |                                  |
-+------------------------------------------------------------------+
-|                                                                   |
-| [Stacked Bar Chart: OE/Aftermarket by Aircraft Type]             |
-| Narrow Body, Wide-Body, Regional, Business Jets                   |
-|                                                                   |
-+------------------------------------------------------------------+
-|                                                                   |
-| [Stacked Bar Chart: OE/Aftermarket by Region]                    |
-| North America, Europe, Asia-Pacific, Rest of World               |
-|                                                                   |
-+------------------------------------------------------------------+
-| [Comparison Table - Growth Analysis]                              |
-+------------------------------------------------------------------+
-```
+- Wrap the KPI Cards section in a conditional that excludes `segmentType === "endUser"`
+- Keep KPI cards for all other segment types (overview, aircraft, region, application, equipment)
 
 ---
 
 ## File Changes Summary
 
-| File | Action | Description |
-|------|--------|-------------|
-| `src/pages/tabs/SegmentDetailTab.tsx` | Modify | Remove year selector, add condition for End User tab to show stacked charts |
-| `src/components/dashboard/StackedBarChart.tsx` | Create | New stacked horizontal bar chart component |
-| `src/hooks/useMarketData.ts` | Modify | Add interface for cross-dimensional data, add helper to calculate proportional breakdown |
-| `public/data/marketData.json` | Modify | Add `endUserByAircraftType` and `endUserByRegion` data sections |
-
----
-
-## Implementation Approach for Data
-
-Since the actual cross-dimensional data might not be available, we'll use proportional estimation:
-
-```
-OE by Narrow Body = Total Narrow Body × (Total OE / Total Market)
-Aftermarket by Narrow Body = Total Narrow Body × (Total Aftermarket / Total Market)
-```
-
-This maintains consistency with total values while providing meaningful visualization.
-
-Alternatively, the data can be provided in the JSON file with actual values if available from the research.
-
----
-
-## Technical Details
-
-### Stacked Bar Chart Implementation
-
-Uses Recharts BarChart with:
-- `layout="vertical"` for horizontal bars
-- Two Bar components stacked: `stackId="stack"`
-- Bar 1: `dataKey="oe"` with cyan fill
-- Bar 2: `dataKey="aftermarket"` with amber fill
-- Custom tooltip showing both segments
-- Legend at bottom showing color keys
-
-### Colors
-
-- OE (Original Equipment): `hsl(192, 95%, 55%)` - Cyan
-- Aftermarket: `hsl(38, 92%, 55%)` - Amber
-
-These match the existing chart color scheme.
-
-### Responsive Behavior
-
-- On mobile: Charts stack vertically
-- Bar labels remain visible with adequate left margin
-- Touch-friendly hover/click areas
+| File | Change |
+|------|--------|
+| `src/index.css` | Replace Inter font with Poppins in import and html selector |
+| `src/components/dashboard/StackedBarChart.tsx` | Add year to tooltip title display |
+| `src/pages/tabs/SegmentDetailTab.tsx` | Conditionally hide KPI cards for endUser segment |
 
