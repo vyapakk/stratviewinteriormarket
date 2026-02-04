@@ -80,21 +80,29 @@ export function SegmentDetailTab({
     primarySegments: SegmentData[],
     stackSegments: SegmentData[]
   ) => {
-    const totalMarketData = marketData.totalMarket;
-    const totalMarketValue = totalMarketData.find((d) => d.year === selectedYear)?.value ?? 1;
+    // Calculate the total of all stack segments for the selected year
+    const stackTotal = stackSegments.reduce((sum, stack) => {
+      return sum + (stack.data.find((d) => d.year === selectedYear)?.value ?? 0);
+    }, 0);
 
     return primarySegments.map((primary) => {
       const primaryValue = primary.data.find((d) => d.year === selectedYear)?.value ?? 0;
 
       const segments = stackSegments.map((stack) => {
         const stackValue = stack.data.find((d) => d.year === selectedYear)?.value ?? 0;
-        const stackRatio = stackValue / totalMarketValue;
+        // Calculate proportion based on stack segment's share of stack total
+        const stackRatio = stackTotal > 0 ? stackValue / stackTotal : 0;
+        // Apply ratio to primary value so segments sum to primaryValue
         const segmentValue = primaryValue * stackRatio;
 
+        // Similar calculation for full historical data
         const fullData = primary.data.map((d) => {
-          const yearTotal = totalMarketData.find((t) => t.year === d.year)?.value ?? 1;
-          const yearStack = stack.data.find((s) => s.year === d.year)?.value ?? 0;
-          return { year: d.year, value: d.value * (yearStack / yearTotal) };
+          const yearStackTotal = stackSegments.reduce((sum, s) => {
+            return sum + (s.data.find((sd) => sd.year === d.year)?.value ?? 0);
+          }, 0);
+          const yearStackValue = stack.data.find((s) => s.year === d.year)?.value ?? 0;
+          const yearStackRatio = yearStackTotal > 0 ? yearStackValue / yearStackTotal : 0;
+          return { year: d.year, value: d.value * yearStackRatio };
         });
 
         return { name: stack.name, value: segmentValue, fullData };
@@ -103,7 +111,7 @@ export function SegmentDetailTab({
       return {
         name: primary.name,
         segments,
-        total: segments.reduce((sum, s) => sum + s.value, 0),
+        total: primaryValue, // Use actual primary value as total
       };
     });
   };
@@ -112,33 +120,43 @@ export function SegmentDetailTab({
   const getEndUserStackedData = (stackSegments: SegmentData[]) => {
     const oeData = marketData.endUser.find((s) => s.name.includes("OE"))?.data ?? [];
     const aftermarketData = marketData.endUser.find((s) => s.name === "Aftermarket")?.data ?? [];
-    const totalMarketData = marketData.totalMarket;
-    const totalMarketValue = totalMarketData.find((d) => d.year === selectedYear)?.value ?? 1;
+    
+    const oeValue = oeData.find((d) => d.year === selectedYear)?.value ?? 0;
+    const aftermarketValue = aftermarketData.find((d) => d.year === selectedYear)?.value ?? 0;
 
-    const oeRatio = (oeData.find((d) => d.year === selectedYear)?.value ?? 0) / totalMarketValue;
-    const aftermarketRatio = (aftermarketData.find((d) => d.year === selectedYear)?.value ?? 0) / totalMarketValue;
+    // Calculate the total of all stack segments for the selected year
+    const stackTotal = stackSegments.reduce((sum, stack) => {
+      return sum + (stack.data.find((d) => d.year === selectedYear)?.value ?? 0);
+    }, 0);
 
-    const createSegments = (ratio: number, endUserData: YearlyData[]) => {
+    const createSegments = (endUserValue: number, endUserData: YearlyData[]) => {
       return stackSegments.map((segment) => {
         const segmentValue = segment.data.find((d) => d.year === selectedYear)?.value ?? 0;
-        const value = segmentValue * ratio;
+        // Calculate proportion based on stack segment's share of stack total
+        const stackRatio = stackTotal > 0 ? segmentValue / stackTotal : 0;
+        // Apply ratio to end user value so segments sum to endUserValue
+        const value = endUserValue * stackRatio;
 
-        const fullData = segment.data.map((d) => {
-          const yearTotal = totalMarketData.find((t) => t.year === d.year)?.value ?? 1;
-          const yearEndUser = endUserData.find((e) => e.year === d.year)?.value ?? 0;
-          return { year: d.year, value: d.value * (yearEndUser / yearTotal) };
+        // Similar calculation for full historical data
+        const fullData = endUserData.map((d) => {
+          const yearStackTotal = stackSegments.reduce((sum, s) => {
+            return sum + (s.data.find((sd) => sd.year === d.year)?.value ?? 0);
+          }, 0);
+          const yearSegmentValue = segment.data.find((s) => s.year === d.year)?.value ?? 0;
+          const yearStackRatio = yearStackTotal > 0 ? yearSegmentValue / yearStackTotal : 0;
+          return { year: d.year, value: d.value * yearStackRatio };
         });
 
         return { name: segment.name, value, fullData };
       });
     };
 
-    const oeSegments = createSegments(oeRatio, oeData);
-    const aftermarketSegments = createSegments(aftermarketRatio, aftermarketData);
+    const oeSegments = createSegments(oeValue, oeData);
+    const aftermarketSegments = createSegments(aftermarketValue, aftermarketData);
 
     return [
-      { name: "OE (Original Equipment)", segments: oeSegments, total: oeSegments.reduce((sum, s) => sum + s.value, 0) },
-      { name: "Aftermarket", segments: aftermarketSegments, total: aftermarketSegments.reduce((sum, s) => sum + s.value, 0) },
+      { name: "OE (Original Equipment)", segments: oeSegments, total: oeValue },
+      { name: "Aftermarket", segments: aftermarketSegments, total: aftermarketValue },
     ];
   };
 
