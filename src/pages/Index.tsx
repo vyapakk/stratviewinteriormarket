@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, Globe, DollarSign, BarChart3 } from "lucide-react";
+import { TrendingUp, Globe, DollarSign, BarChart3, AlertCircle, RefreshCw } from "lucide-react";
 import stratviewLogoColor from "@/assets/stratview-logo-color.png";
 
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -12,49 +12,63 @@ import { YearSelector } from "@/components/dashboard/YearSelector";
 import { SegmentTabs, SegmentType } from "@/components/dashboard/SegmentTabs";
 import { ComparisonTable } from "@/components/dashboard/ComparisonTable";
 import { DrillDownModal } from "@/components/dashboard/DrillDownModal";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { useDrillDown } from "@/hooks/useDrillDown";
-
-import {
-  totalMarketData,
-  endUserData,
-  aircraftTypeData,
-  regionData,
-  applicationData,
-  furnishedEquipmentData,
-  countryDataByRegion,
-  calculateCAGR,
-  YearlyData,
-} from "@/data/marketData";
+import { useMarketData, calculateCAGR, YearlyData, SegmentData } from "@/hooks/useMarketData";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [selectedYear, setSelectedYear] = useState(2024);
   const [segmentType, setSegmentType] = useState<SegmentType>("endUser");
   const { drillDownState, openDrillDown, closeDrillDown } = useDrillDown();
+  
+  // Fetch market data from external JSON
+  const { data: marketData, isLoading, error, refetch } = useMarketData();
+
+  // Show loading skeleton while fetching data
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  // Show error state if fetch failed
+  if (error || !marketData) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-4">
+        <AlertCircle className="h-16 w-16 text-destructive" />
+        <h1 className="text-2xl font-bold text-foreground">Failed to Load Data</h1>
+        <p className="text-muted-foreground">{error || "Unable to load market data"}</p>
+        <Button onClick={refetch} className="mt-4">
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   // Calculate KPI values
-  const currentMarketValue = totalMarketData.find((d) => d.year === selectedYear)?.value ?? 0;
-  const previousYearValue = totalMarketData.find((d) => d.year === selectedYear - 1)?.value ?? 0;
+  const currentMarketValue = marketData.totalMarket.find((d) => d.year === selectedYear)?.value ?? 0;
+  const previousYearValue = marketData.totalMarket.find((d) => d.year === selectedYear - 1)?.value ?? 0;
   const yoyChange = previousYearValue > 0 ? ((currentMarketValue - previousYearValue) / previousYearValue) * 100 : 0;
   
-  const value2024 = totalMarketData.find((d) => d.year === 2024)?.value ?? 0;
-  const value2034 = totalMarketData.find((d) => d.year === 2034)?.value ?? 0;
+  const value2024 = marketData.totalMarket.find((d) => d.year === 2024)?.value ?? 0;
+  const value2034 = marketData.totalMarket.find((d) => d.year === 2034)?.value ?? 0;
   const cagr2024to2034 = calculateCAGR(value2024, value2034, 10);
 
   // Get current segment data
   const getSegmentData = () => {
     switch (segmentType) {
       case "endUser":
-        return { data: endUserData, title: "By End User Type" };
+        return { data: marketData.endUser, title: "By End User Type" };
       case "aircraft":
-        return { data: aircraftTypeData, title: "By Aircraft Type" };
+        return { data: marketData.aircraftType, title: "By Aircraft Type" };
       case "region":
-        return { data: regionData, title: "By Region" };
+        return { data: marketData.region, title: "By Region" };
       case "application":
-        return { data: applicationData, title: "By Application" };
+        return { data: marketData.application, title: "By Application" };
       case "equipment":
-        return { data: furnishedEquipmentData, title: "By Equipment Type" };
+        return { data: marketData.furnishedEquipment, title: "By Equipment Type" };
       default:
-        return { data: endUserData, title: "By End User Type" };
+        return { data: marketData.endUser, title: "By End User Type" };
     }
   };
 
@@ -63,20 +77,20 @@ const Index = () => {
   // Get related segments for drill-down based on current context
   const getRelatedSegmentsForDrillDown = (segmentName: string) => {
     // For regions, show country breakdown
-    if (segmentType === "region" && countryDataByRegion[segmentName]) {
-      return { title: `Countries in ${segmentName}`, data: countryDataByRegion[segmentName] };
+    if (segmentType === "region" && marketData.countryDataByRegion[segmentName]) {
+      return { title: `Countries in ${segmentName}`, data: marketData.countryDataByRegion[segmentName] };
     }
     if (segmentType === "aircraft") {
-      return { title: "Applications for this Aircraft Type", data: applicationData };
+      return { title: "Applications for this Aircraft Type", data: marketData.application };
     }
     if (segmentType === "endUser") {
-      return { title: "Regions for this End User", data: regionData };
+      return { title: "Regions for this End User", data: marketData.region };
     }
     if (segmentType === "application") {
-      return { title: "Aircraft Types by Application", data: aircraftTypeData };
+      return { title: "Aircraft Types by Application", data: marketData.aircraftType };
     }
     if (segmentType === "equipment") {
-      return { title: "End Users by Equipment", data: endUserData };
+      return { title: "End Users by Equipment", data: marketData.endUser };
     }
     return undefined;
   };
@@ -89,17 +103,17 @@ const Index = () => {
   // Handle drill-down for bar chart segments (Regional Distribution)
   const handleBarClick = (segmentName: string, segmentData: YearlyData[], color: string) => {
     // For regional bar, show country breakdown
-    const countryData = countryDataByRegion[segmentName];
+    const countryData = marketData.countryDataByRegion[segmentName];
     if (countryData) {
       openDrillDown(segmentName, segmentData, color, { title: `Countries in ${segmentName}`, data: countryData });
     } else {
-      openDrillDown(segmentName, segmentData, color, { title: "Related Applications", data: applicationData });
+      openDrillDown(segmentName, segmentData, color, { title: "Related Applications", data: marketData.application });
     }
   };
 
   // Handle drill-down for aircraft type bar
   const handleAircraftBarClick = (segmentName: string, segmentData: YearlyData[], color: string) => {
-    openDrillDown(segmentName, segmentData, color, { title: "Applications", data: applicationData });
+    openDrillDown(segmentName, segmentData, color, { title: "Applications", data: marketData.application });
   };
 
   // Handle drill-down for area chart legend
@@ -114,11 +128,11 @@ const Index = () => {
 
   // Handle KPI card clicks for drill-down
   const handleMarketSizeClick = () => {
-    openDrillDown("Total Market", totalMarketData, "hsl(192, 95%, 55%)", { title: "By Region", data: regionData });
+    openDrillDown("Total Market", marketData.totalMarket, "hsl(192, 95%, 55%)", { title: "By Region", data: marketData.region });
   };
 
   const handleForecastClick = () => {
-    openDrillDown("2034 Forecast", totalMarketData, "hsl(38, 92%, 55%)", { title: "By Aircraft Type", data: aircraftTypeData });
+    openDrillDown("2034 Forecast", marketData.totalMarket, "hsl(38, 92%, 55%)", { title: "By Aircraft Type", data: marketData.aircraftType });
   };
 
   return (
@@ -165,7 +179,7 @@ const Index = () => {
           />
           <KPICard
             title="Regions Covered"
-            value={4}
+            value={marketData.region.length}
             prefix=""
             suffix=""
             decimals={0}
@@ -179,7 +193,7 @@ const Index = () => {
         <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <MarketTrendChart
-              data={totalMarketData}
+              data={marketData.totalMarket}
               segments={currentSegment.data}
               title="Market Size Trend"
               subtitle="Historical and forecast data (US$ Millions) - Click legend to drill down"
@@ -198,14 +212,14 @@ const Index = () => {
         {/* Secondary Charts */}
         <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <RegionalBarChart
-            data={regionData}
+            data={marketData.region}
             year={selectedYear}
             title="Regional Distribution"
             subtitle={`Market size by region in ${selectedYear}`}
             onBarClick={handleBarClick}
           />
           <RegionalBarChart
-            data={aircraftTypeData}
+            data={marketData.aircraftType}
             year={selectedYear}
             title="Aircraft Type Breakdown"
             subtitle={`Market size by aircraft type in ${selectedYear}`}

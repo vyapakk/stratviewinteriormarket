@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { SegmentData, YearlyData } from "@/data/marketData";
+import { SegmentData, YearlyData } from "@/hooks/useMarketData";
 import { MousePointer2, ArrowRight } from "lucide-react";
 
 interface ComparisonTableProps {

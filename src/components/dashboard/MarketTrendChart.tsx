@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { YearlyData, SegmentData } from "@/data/marketData";
+import { YearlyData, SegmentData } from "@/hooks/useMarketData";
 import { MousePointer2 } from "lucide-react";
 import { useRef } from "react";
 import { useChartDownload } from "@/hooks/useChartDownload";

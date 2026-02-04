@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { SegmentData, YearlyData, calculateCAGR } from "@/data/marketData";
+import { SegmentData, YearlyData, calculateCAGR } from "@/hooks/useMarketData";
 import { useState, useRef } from "react";
 import { useChartDownload } from "@/hooks/useChartDownload";
 import { ChartDownloadButton } from "./ChartDownloadButton";

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { SegmentData, YearlyData } from "@/data/marketData";
+import { SegmentData, YearlyData } from "@/hooks/useMarketData";
 
 export interface DrillDownState {
   isOpen: boolean;

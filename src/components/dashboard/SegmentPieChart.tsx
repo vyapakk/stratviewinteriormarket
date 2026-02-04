@@ -8,7 +8,7 @@ import {
   Legend,
   Sector,
 } from "recharts";
-import { SegmentData, YearlyData } from "@/data/marketData";
+import { SegmentData, YearlyData } from "@/hooks/useMarketData";
 import { useState, useRef } from "react";
 import { MousePointer2 } from "lucide-react";
 import { useChartDownload } from "@/hooks/useChartDownload";
