@@ -6,7 +6,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   Cell,
 } from "recharts";
@@ -15,12 +14,16 @@ import { useChartDownload } from "@/hooks/useChartDownload";
 import { ChartDownloadButton } from "./ChartDownloadButton";
 import { YearlyData } from "@/hooks/useMarketData";
 
-interface StackedBarData {
+interface SegmentBreakdown {
   name: string;
-  oe: number;
-  aftermarket: number;
-  oeFullData?: YearlyData[];
-  aftermarketFullData?: YearlyData[];
+  value: number;
+  fullData?: YearlyData[];
+}
+
+interface StackedBarData {
+  name: string; // "OE" or "Aftermarket"
+  segments: SegmentBreakdown[];
+  total: number;
 }
 
 interface StackedBarChartProps {
@@ -28,56 +31,62 @@ interface StackedBarChartProps {
   year: number;
   title: string;
   subtitle?: string;
+  segmentColors: string[];
+  segmentNames: string[];
   onSegmentClick?: (
-    categoryName: string,
-    endUserType: "OE" | "Aftermarket",
+    endUserType: string,
+    segmentName: string,
     value: number,
     fullData?: YearlyData[]
   ) => void;
 }
-
-const OE_COLOR = "hsl(192, 95%, 55%)";
-const AFTERMARKET_COLOR = "hsl(38, 92%, 55%)";
 
 export function StackedBarChart({
   data,
   year,
   title,
   subtitle,
+  segmentColors,
+  segmentNames,
   onSegmentClick,
 }: StackedBarChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const { downloadChart } = useChartDownload();
-  const [activeBar, setActiveBar] = useState<{ index: number; dataKey: string } | null>(null);
+  const [activeSegment, setActiveSegment] = useState<{ barIndex: number; segmentIndex: number } | null>(null);
+
+  // Transform data for Recharts - each segment becomes a dataKey
+  const chartData = data.map((bar) => {
+    const result: Record<string, any> = { name: bar.name, total: bar.total };
+    bar.segments.forEach((seg) => {
+      result[seg.name] = seg.value;
+      result[`${seg.name}_fullData`] = seg.fullData;
+    });
+    return result;
+  });
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const oeData = payload.find((p: any) => p.dataKey === "oe");
-      const aftermarketData = payload.find((p: any) => p.dataKey === "aftermarket");
-      const total = (oeData?.value || 0) + (aftermarketData?.value || 0);
-      const oePercent = total > 0 ? ((oeData?.value || 0) / total * 100).toFixed(1) : "0";
-      const aftermarketPercent = total > 0 ? ((aftermarketData?.value || 0) / total * 100).toFixed(1) : "0";
-
+      const total = payload.reduce((sum: number, p: any) => sum + (p.value || 0), 0);
       return (
         <div className="rounded-lg border border-border bg-popover p-4 shadow-lg">
           <p className="font-semibold text-foreground">{label}</p>
           <div className="mt-2 space-y-2 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: OE_COLOR }} />
-              <span className="text-muted-foreground">OE:</span>
-              <span className="font-mono font-medium text-foreground">
-                ${oeData?.value?.toLocaleString()}M
-              </span>
-              <span className="text-muted-foreground">({oePercent}%)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: AFTERMARKET_COLOR }} />
-              <span className="text-muted-foreground">Aftermarket:</span>
-              <span className="font-mono font-medium text-foreground">
-                ${aftermarketData?.value?.toLocaleString()}M
-              </span>
-              <span className="text-muted-foreground">({aftermarketPercent}%)</span>
-            </div>
+            {payload.map((entry: any, index: number) => {
+              const percent = total > 0 ? ((entry.value / total) * 100).toFixed(1) : "0";
+              return (
+                <div key={index} className="flex items-center gap-2">
+                  <div
+                    className="h-3 w-3 rounded-sm"
+                    style={{ backgroundColor: entry.fill }}
+                  />
+                  <span className="text-muted-foreground">{entry.name}:</span>
+                  <span className="font-mono font-medium text-foreground">
+                    ${entry.value?.toLocaleString()}M
+                  </span>
+                  <span className="text-muted-foreground">({percent}%)</span>
+                </div>
+              );
+            })}
             <div className="border-t border-border pt-2">
               <span className="text-muted-foreground">Total:</span>
               <span className="ml-2 font-mono font-medium text-foreground">
@@ -94,32 +103,26 @@ export function StackedBarChart({
     return null;
   };
 
-  const handleBarClick = (dataKey: "oe" | "aftermarket", entry: any) => {
+  const handleBarClick = (segmentName: string, entry: any) => {
     if (onSegmentClick) {
-      const item = data.find((d) => d.name === entry.name);
-      if (item) {
-        const fullData = dataKey === "oe" ? item.oeFullData : item.aftermarketFullData;
-        onSegmentClick(
-          entry.name,
-          dataKey === "oe" ? "OE" : "Aftermarket",
-          dataKey === "oe" ? item.oe : item.aftermarket,
-          fullData
-        );
-      }
+      const value = entry[segmentName];
+      const fullData = entry[`${segmentName}_fullData`];
+      onSegmentClick(entry.name, segmentName, value, fullData);
     }
   };
 
   const renderLegend = () => {
     return (
-      <div className="mt-4 flex justify-center gap-6">
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: OE_COLOR }} />
-          <span className="text-sm text-muted-foreground">OE (Original Equipment)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: AFTERMARKET_COLOR }} />
-          <span className="text-sm text-muted-foreground">Aftermarket</span>
-        </div>
+      <div className="mt-4 flex flex-wrap justify-center gap-4">
+        {segmentNames.map((name, index) => (
+          <div key={name} className="flex items-center gap-2">
+            <div
+              className="h-3 w-3 rounded-sm"
+              style={{ backgroundColor: segmentColors[index % segmentColors.length] }}
+            />
+            <span className="text-sm text-muted-foreground">{name}</span>
+          </div>
+        ))}
       </div>
     );
   };
@@ -144,12 +147,12 @@ export function StackedBarChart({
         />
       </div>
 
-      <div className="h-[300px] w-full">
+      <div className="h-[200px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={data}
+            data={chartData}
             layout="vertical"
-            margin={{ top: 10, right: 30, left: 80, bottom: 10 }}
+            margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
           >
             <CartesianGrid
               strokeDasharray="3 3"
@@ -168,57 +171,36 @@ export function StackedBarChart({
               dataKey="name"
               tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
               axisLine={{ stroke: "hsl(var(--border))" }}
-              width={75}
+              width={95}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted)/0.1)" }} />
-            <Bar
-              dataKey="oe"
-              stackId="stack"
-              fill={OE_COLOR}
-              radius={[0, 0, 0, 0]}
-              onClick={(entry) => handleBarClick("oe", entry)}
-              style={{ cursor: onSegmentClick ? "pointer" : "default" }}
-            >
-              {data.map((entry, index) => (
-                <Cell
-                  key={`oe-${index}`}
-                  fill={OE_COLOR}
-                  opacity={
-                    activeBar === null
-                      ? 1
-                      : activeBar.index === index && activeBar.dataKey === "oe"
-                      ? 1
-                      : 0.5
-                  }
-                  onMouseEnter={() => setActiveBar({ index, dataKey: "oe" })}
-                  onMouseLeave={() => setActiveBar(null)}
-                />
-              ))}
-            </Bar>
-            <Bar
-              dataKey="aftermarket"
-              stackId="stack"
-              fill={AFTERMARKET_COLOR}
-              radius={[0, 4, 4, 0]}
-              onClick={(entry) => handleBarClick("aftermarket", entry)}
-              style={{ cursor: onSegmentClick ? "pointer" : "default" }}
-            >
-              {data.map((entry, index) => (
-                <Cell
-                  key={`aftermarket-${index}`}
-                  fill={AFTERMARKET_COLOR}
-                  opacity={
-                    activeBar === null
-                      ? 1
-                      : activeBar.index === index && activeBar.dataKey === "aftermarket"
-                      ? 1
-                      : 0.5
-                  }
-                  onMouseEnter={() => setActiveBar({ index, dataKey: "aftermarket" })}
-                  onMouseLeave={() => setActiveBar(null)}
-                />
-              ))}
-            </Bar>
+            {segmentNames.map((segmentName, index) => (
+              <Bar
+                key={segmentName}
+                dataKey={segmentName}
+                stackId="stack"
+                fill={segmentColors[index % segmentColors.length]}
+                radius={index === segmentNames.length - 1 ? [0, 4, 4, 0] : [0, 0, 0, 0]}
+                onClick={(entry) => handleBarClick(segmentName, entry)}
+                style={{ cursor: onSegmentClick ? "pointer" : "default" }}
+              >
+                {chartData.map((entry, barIndex) => (
+                  <Cell
+                    key={`${segmentName}-${barIndex}`}
+                    fill={segmentColors[index % segmentColors.length]}
+                    opacity={
+                      activeSegment === null
+                        ? 1
+                        : activeSegment.barIndex === barIndex && activeSegment.segmentIndex === index
+                        ? 1
+                        : 0.6
+                    }
+                    onMouseEnter={() => setActiveSegment({ barIndex, segmentIndex: index })}
+                    onMouseLeave={() => setActiveSegment(null)}
+                  />
+                ))}
+              </Bar>
+            ))}
           </BarChart>
         </ResponsiveContainer>
       </div>
