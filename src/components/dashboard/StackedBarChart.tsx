@@ -75,7 +75,7 @@ export function StackedBarChart({
 
       return (
         <div className="rounded-lg border border-border bg-popover p-4 shadow-lg">
-          <p className="font-semibold text-foreground">{label} - {activeSegment.segmentName}</p>
+          <p className="font-semibold text-foreground">{label} - {activeSegment.segmentName} ({year})</p>
           <div className="mt-2 space-y-2 text-sm">
             <div className="flex items-center gap-2">
               <div

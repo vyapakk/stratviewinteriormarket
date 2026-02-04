@@ -171,34 +171,36 @@ export function SegmentDetailTab({
 
   return (
     <div className="space-y-8">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KPICard
-          title={`${selectedYear} Market Size`}
-          value={currentYearTotal / 1000}
-          suffix="B"
-          icon={DollarSign}
-          delay={0}
-          accentColor="primary"
-        />
-        <KPICard
-          title="10-Year CAGR"
-          value={cagr}
-          prefix=""
-          suffix="%"
-          icon={BarChart3}
-          delay={0.1}
-          accentColor="chart-4"
-        />
-        <KPICard
-          title="2034 Forecast"
-          value={value2034Total / 1000}
-          suffix="B"
-          icon={TrendingUp}
-          delay={0.2}
-          accentColor="accent"
-        />
-      </div>
+      {/* KPI Cards - Hidden for End User tab */}
+      {segmentType !== "endUser" && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <KPICard
+            title={`${selectedYear} Market Size`}
+            value={currentYearTotal / 1000}
+            suffix="B"
+            icon={DollarSign}
+            delay={0}
+            accentColor="primary"
+          />
+          <KPICard
+            title="10-Year CAGR"
+            value={cagr}
+            prefix=""
+            suffix="%"
+            icon={BarChart3}
+            delay={0.1}
+            accentColor="chart-4"
+          />
+          <KPICard
+            title="2034 Forecast"
+            value={value2034Total / 1000}
+            suffix="B"
+            icon={TrendingUp}
+            delay={0.2}
+            accentColor="accent"
+          />
+        </div>
+      )}
 
       {/* Main Charts Row */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
