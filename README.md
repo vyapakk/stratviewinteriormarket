@@ -1,73 +1,147 @@
-# Welcome to your Lovable project
+# Aircraft Interiors Market Dashboard
 
-## Project info
+A React-based interactive dashboard for visualizing Aircraft Interiors Market research data (2016-2034).
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Quick Start
 
-## How can I edit this code?
+```bash
+# Install dependencies
+npm install
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
+
+# Build for production
+npm run build
 ```
 
-**Edit a file directly in GitHub**
+## Project Structure
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+├── public/
+│   └── data/
+│       └── marketData.json     # 📊 ALL MARKET DATA - Edit this file to update data
+├── src/
+│   ├── assets/                 # Logo images
+│   ├── components/
+│   │   ├── dashboard/          # Dashboard-specific components
+│   │   └── ui/                 # Reusable UI components (shadcn/ui)
+│   ├── hooks/
+│   │   └── useMarketData.ts    # Data fetching and transformation hook
+│   ├── pages/
+│   │   ├── tabs/               # Tab content components
+│   │   ├── Index.tsx           # Main dashboard page
+│   │   └── NotFound.tsx        # 404 page
+│   └── index.css               # Global styles and design tokens
+└── tailwind.config.ts          # Tailwind configuration
+```
 
-**Use GitHub Codespaces**
+## Updating Market Data
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+**All market data is stored in a single file:** `public/data/marketData.json`
 
-## What technologies are used for this project?
+### Data Format
 
-This project is built with:
+The data uses a compact, non-repetitive format:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```json
+{
+  "years": [2016, 2017, 2018, ..., 2034],
+  
+  "totalMarket": [12894.9, 13768.0, ...],  // Values align with years array
+  
+  "endUser": {
+    "OE (Original Equipment)": [8448.8, 8765.3, ...],
+    "Aftermarket": [4446.2, 5002.6, ...]
+  },
+  
+  "region": {
+    "North America": [6088.8, 6536.3, ...],
+    "Europe": [3781.1, 3974.0, ...],
+    ...
+  }
+}
+```
 
-## How can I deploy this project?
+### How to Update Values
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+1. Open `public/data/marketData.json`
+2. Find the segment you want to update
+3. Modify the values array - each position corresponds to the same position in the `years` array
+   - Index 0 = 2016
+   - Index 1 = 2017
+   - ...
+   - Index 18 = 2034
 
-## Can I connect a custom domain to my Lovable project?
+### Adding New Segments
 
-Yes, you can!
+To add a new segment category:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+1. Add the data to `marketData.json` following the existing pattern
+2. Update the TypeScript interfaces in `src/hooks/useMarketData.ts`
+3. Add the UI component to display it
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Tech Stack
+
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling
+- **Recharts** - Data visualization
+- **Framer Motion** - Animations
+- **shadcn/ui** - UI component library
+
+## Embedding in Your Website
+
+### Option 1: iframe Embed
+
+```html
+<iframe 
+  src="https://your-deployed-url.com" 
+  width="100%" 
+  height="800px"
+  style="border: none;"
+></iframe>
+```
+
+### Option 2: Build and Host
+
+1. Run `npm run build`
+2. Copy the `dist/` folder contents to your web server
+3. Serve as static files
+
+### Option 3: Component Integration
+
+If integrating into an existing React app:
+
+1. Copy the `src/components/dashboard/` folder
+2. Copy `public/data/marketData.json` to your public folder
+3. Copy `src/hooks/useMarketData.ts`
+4. Import and use the components
+
+## Configuration
+
+### Changing Data Source URL
+
+In `src/hooks/useMarketData.ts`, modify the `DATA_URL` constant:
+
+```typescript
+const DATA_URL = "/data/marketData.json";  // Default: local file
+// const DATA_URL = "https://api.example.com/market-data";  // Your API
+```
+
+### Customizing Colors
+
+Edit the CSS variables in `src/index.css`:
+
+```css
+:root {
+  --primary: 220 90% 45%;
+  --chart-1: 220 90% 45%;
+  --chart-2: 160 60% 45%;
+  /* ... */
+}
+```
+
+## All Values Are in US$ Million
+
+Unless otherwise specified, all monetary values in the dashboard are in US$ Million.
