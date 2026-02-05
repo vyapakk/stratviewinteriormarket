@@ -105,18 +105,18 @@ export function MarketTrendChart({
   const renderLegend = (props: any) => {
     const { payload } = props;
     return (
-      <div className="mt-4 flex flex-wrap justify-center gap-4">
+      <div className="mt-3 sm:mt-4 flex flex-wrap justify-center gap-x-2 gap-y-1 sm:gap-4">
         {payload.map((entry: any, index: number) => (
           <div
             key={index}
-            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-secondary/50"
+            className="flex cursor-pointer items-center gap-1.5 sm:gap-2 rounded-md px-1.5 sm:px-2 py-0.5 sm:py-1 transition-colors hover:bg-secondary/50"
             onClick={() => handleLegendClick(entry)}
           >
             <div
-              className="h-3 w-3 rounded-full"
+              className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-sm text-muted-foreground">{entry.value}</span>
+            <span className="text-xs sm:text-sm text-muted-foreground">{entry.value}</span>
           </div>
         ))}
       </div>
@@ -143,9 +143,9 @@ export function MarketTrendChart({
         />
       </div>
 
-      <div className="h-[350px] w-full">
+      <div className="h-[300px] sm:h-[350px] w-full -mx-2 sm:mx-0">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 15, left: -15, bottom: 0 }}>
             <defs>
               {showSegments && segments ? (
                 segments.map((seg, idx) => (

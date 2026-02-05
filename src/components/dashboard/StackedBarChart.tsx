@@ -115,14 +115,14 @@ export function StackedBarChart({
 
   const renderLegend = () => {
     return (
-      <div className="mt-4 flex flex-wrap justify-center gap-4">
+      <div className="mt-3 sm:mt-4 flex flex-wrap justify-center gap-x-3 gap-y-1.5 sm:gap-4">
         {segmentNames.map((name, index) => (
-          <div key={name} className="flex items-center gap-2">
+          <div key={name} className="flex items-center gap-1.5 sm:gap-2">
             <div
-              className="h-3 w-3 rounded-sm"
+              className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-sm flex-shrink-0"
               style={{ backgroundColor: segmentColors[index % segmentColors.length] }}
             />
-            <span className="text-sm text-muted-foreground">{name}</span>
+            <span className="text-xs sm:text-sm text-muted-foreground">{name}</span>
           </div>
         ))}
       </div>
@@ -149,12 +149,12 @@ export function StackedBarChart({
         />
       </div>
 
-      <div className="h-[200px] w-full">
+      <div className="h-[200px] w-full -mx-2 sm:mx-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
             layout="vertical"
-            margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
+            margin={{ top: 10, right: 15, left: 60, bottom: 10 }}
           >
             <CartesianGrid
               strokeDasharray="3 3"
