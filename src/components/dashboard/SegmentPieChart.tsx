@@ -5,7 +5,6 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  Legend,
   Sector,
 } from "recharts";
 import { SegmentData, YearlyData } from "@/hooks/useMarketData";
@@ -140,15 +139,15 @@ export function SegmentPieChart({ data, year, title, onSegmentClick }: SegmentPi
         />
       </div>
 
-      <div className="h-[300px] w-full">
+      <div className="h-[280px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={pieData}
               cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={100}
+              cy="45%"
+              innerRadius={50}
+              outerRadius={85}
               paddingAngle={2}
               dataKey="value"
               stroke="hsl(222, 47%, 6%)"
@@ -168,9 +167,23 @@ export function SegmentPieChart({ data, year, title, onSegmentClick }: SegmentPi
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
-            <Legend content={renderLegend} />
           </PieChart>
         </ResponsiveContainer>
+      </div>
+      <div className="mt-2 flex flex-wrap justify-center gap-3">
+        {pieData.map((entry, index) => (
+          <div
+            key={index}
+            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-secondary/50"
+            onClick={() => handlePieClick(entry, index)}
+          >
+            <div
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-xs text-muted-foreground">{entry.name}</span>
+          </div>
+        ))}
       </div>
       <p className="mt-2 text-center text-xs text-muted-foreground">
         Click any segment to see detailed trends
