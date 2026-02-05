@@ -107,9 +107,9 @@ export function MarketOverviewChart({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="rounded-xl border border-border bg-card p-6"
+      className="rounded-xl border border-border bg-card p-3 sm:p-6"
     >
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-4 sm:mb-6 flex items-start justify-between">
         <div>
           <h3 className="text-lg font-semibold text-foreground">{title}</h3>
           {subtitle && (
@@ -121,9 +121,9 @@ export function MarketOverviewChart({
         />
       </div>
 
-      <div className="h-[300px] sm:h-[350px] w-full -mx-4 sm:mx-0">
+      <div className="h-[300px] sm:h-[350px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 10, right: 30, left: -20, bottom: 0 }}>
+          <ComposedChart data={chartData} margin={{ top: 10, right: 25, left: -25, bottom: 0 }}>
             <defs>
               <linearGradient id="gradient-market-size" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="hsl(192, 95%, 55%)" stopOpacity={0.4} />
