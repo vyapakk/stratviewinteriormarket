@@ -124,7 +124,6 @@ export function MarketOverviewTab({
         segmentName={drillDownState.segmentName}
         segmentData={drillDownState.segmentData}
         color={drillDownState.color}
-        relatedSegments={drillDownState.relatedSegments}
       />
     </div>
   );

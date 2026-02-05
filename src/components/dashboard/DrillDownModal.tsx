@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, TrendingUp, ArrowLeft } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -8,14 +8,10 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  Cell,
 } from "recharts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { SegmentData, YearlyData, calculateCAGR } from "@/hooks/useMarketData";
-import { useState, useRef } from "react";
+import { YearlyData, calculateCAGR } from "@/hooks/useMarketData";
+import { useRef } from "react";
 import { useChartDownload } from "@/hooks/useChartDownload";
 import { ChartDownloadButton } from "./ChartDownloadButton";
 
@@ -25,10 +21,6 @@ interface DrillDownModalProps {
   segmentName: string;
   segmentData: YearlyData[];
   color: string;
-  relatedSegments?: {
-    title: string;
-    data: SegmentData[];
-  };
 }
 
 export function DrillDownModal({
@@ -37,41 +29,21 @@ export function DrillDownModal({
   segmentName,
   segmentData,
   color,
-  relatedSegments,
 }: DrillDownModalProps) {
-  const [drillLevel, setDrillLevel] = useState(0);
-  const [selectedSubSegment, setSelectedSubSegment] = useState<{
-    name: string;
-    data: YearlyData[];
-    color: string;
-  } | null>(null);
-  
   const trendChartRef = useRef<HTMLDivElement>(null);
-  const barChartRef = useRef<HTMLDivElement>(null);
   const { downloadChart } = useChartDownload();
 
-  const currentValue = segmentData.find((d) => d.year === 2025)?.value ?? 0;
-  const forecastValue = segmentData.find((d) => d.year === 2034)?.value ?? 0;
+  const currentValue = segmentData?.find((d) => d.year === 2025)?.value ?? 0;
+  const forecastValue = segmentData?.find((d) => d.year === 2034)?.value ?? 0;
   const cagr = calculateCAGR(currentValue, forecastValue, 9);
 
-  const subSegmentColors = [
-    "hsl(192, 95%, 55%)",
-    "hsl(38, 92%, 55%)",
-    "hsl(262, 83%, 58%)",
-    "hsl(142, 71%, 45%)",
-    "hsl(346, 77%, 50%)",
-    "hsl(199, 89%, 48%)",
-    "hsl(280, 65%, 60%)",
-    "hsl(60, 70%, 50%)",
-  ];
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
         <div className="rounded-lg border border-border bg-popover p-3 shadow-lg">
-          <p className="mb-1 font-semibold text-foreground">2025 Market Size</p>
+          <p className="mb-1 font-semibold text-foreground">{payload[0].payload?.year}</p>
           <p className="text-sm text-muted-foreground">
-            {payload[0].payload?.name || label}:{" "}
+            Value:{" "}
             <span className="font-mono font-medium text-foreground">
               ${payload[0].value.toLocaleString()}M
             </span>
@@ -82,57 +54,17 @@ export function DrillDownModal({
     return null;
   };
 
-  const handleSubSegmentClick = (item: { name: string; value: number }, index: number) => {
-    if (!relatedSegments) return;
-    const segment = relatedSegments.data.find((s) => s.name === item.name);
-    if (segment) {
-      setSelectedSubSegment({
-        name: segment.name,
-        data: segment.data,
-        color: subSegmentColors[index % subSegmentColors.length],
-      });
-      setDrillLevel(1);
-    }
-  };
-
-  const handleBack = () => {
-    setDrillLevel(0);
-    setSelectedSubSegment(null);
-  };
-
-  const handleClose = () => {
-    setDrillLevel(0);
-    setSelectedSubSegment(null);
-    onClose();
-  };
-
-  // Prepare sub-segment bar data
-  const subSegmentBarData = relatedSegments?.data.map((seg) => ({
-    name: seg.name,
-    value: seg.data.find((d) => d.year === 2025)?.value ?? 0,
-  })) ?? [];
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            {drillLevel > 0 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleBack}
-                className="h-8 w-8"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
             <div
               className="h-4 w-4 rounded-full"
-              style={{ backgroundColor: drillLevel === 0 ? color : selectedSubSegment?.color }}
+              style={{ backgroundColor: color }}
             />
             <DialogTitle className="text-xl">
-              {drillLevel === 0 ? segmentName : selectedSubSegment?.name} - Deep Dive
+              {segmentName} - Deep Dive
             </DialogTitle>
           </div>
         </DialogHeader>
@@ -147,7 +79,7 @@ export function DrillDownModal({
             >
               <p className="text-xs text-muted-foreground">2025 Market Size</p>
               <p className="text-xl font-bold text-foreground">
-                ${((drillLevel === 0 ? currentValue : selectedSubSegment?.data.find(d => d.year === 2025)?.value ?? 0) / 1000).toFixed(2)}B
+                ${(currentValue / 1000).toFixed(2)}B
               </p>
             </motion.div>
             <motion.div
@@ -158,7 +90,7 @@ export function DrillDownModal({
             >
               <p className="text-xs text-muted-foreground">2034 Forecast</p>
               <p className="text-xl font-bold text-foreground">
-                ${((drillLevel === 0 ? forecastValue : selectedSubSegment?.data.find(d => d.year === 2034)?.value ?? 0) / 1000).toFixed(2)}B
+                ${(forecastValue / 1000).toFixed(2)}B
               </p>
             </motion.div>
             <motion.div
@@ -169,15 +101,7 @@ export function DrillDownModal({
             >
               <p className="text-xs text-muted-foreground">CAGR through 2034</p>
               <div className="flex items-center gap-1">
-                <p className="text-xl font-bold text-chart-4">
-                  {drillLevel === 0 
-                    ? cagr.toFixed(1) 
-                    : calculateCAGR(
-                        selectedSubSegment?.data.find(d => d.year === 2025)?.value ?? 0,
-                        selectedSubSegment?.data.find(d => d.year === 2034)?.value ?? 0,
-                        9
-                      ).toFixed(1)}%
-                </p>
+                <p className="text-xl font-bold text-chart-4">{cagr.toFixed(1)}%</p>
                 <TrendingUp className="h-4 w-4 text-chart-4" />
               </div>
             </motion.div>
@@ -194,25 +118,25 @@ export function DrillDownModal({
             <div className="mb-4 flex items-center justify-between">
               <h4 className="text-sm font-semibold text-foreground">Historical & Forecast Trend</h4>
               <ChartDownloadButton
-                onClick={() => downloadChart(trendChartRef, `${drillLevel === 0 ? segmentName : selectedSubSegment?.name}-trend`.toLowerCase().replace(/\s+/g, "-"))}
+                onClick={() => downloadChart(trendChartRef, `${segmentName}-trend`.toLowerCase().replace(/\s+/g, "-"))}
               />
             </div>
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
-                  data={drillLevel === 0 ? segmentData : selectedSubSegment?.data ?? []}
+                  data={segmentData}
                   margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                 >
                   <defs>
                     <linearGradient id="drillGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="5%"
-                        stopColor={drillLevel === 0 ? color : selectedSubSegment?.color ?? color}
+                        stopColor={color}
                         stopOpacity={0.4}
                       />
                       <stop
                         offset="95%"
-                        stopColor={drillLevel === 0 ? color : selectedSubSegment?.color ?? color}
+                        stopColor={color}
                         stopOpacity={0}
                       />
                     </linearGradient>
@@ -234,7 +158,7 @@ export function DrillDownModal({
                   <Area
                     type="monotone"
                     dataKey="value"
-                    stroke={drillLevel === 0 ? color : selectedSubSegment?.color ?? color}
+                    stroke={color}
                     fill="url(#drillGradient)"
                     strokeWidth={2}
                   />
@@ -243,74 +167,11 @@ export function DrillDownModal({
             </div>
           </motion.div>
 
-          {/* Related Segments (only on first drill level) */}
-          {drillLevel === 0 && relatedSegments && relatedSegments.data.length > 0 && (
-            <motion.div
-              ref={barChartRef}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="rounded-lg border border-border bg-secondary/20 p-4"
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-foreground">
-                  {relatedSegments.title} - Click to drill down further
-                </h4>
-                <ChartDownloadButton
-                  onClick={() => downloadChart(barChartRef, `${segmentName}-${relatedSegments.title}`.toLowerCase().replace(/\s+/g, "-"))}
-                />
-              </div>
-              <div className="h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={subSegmentBarData}
-                    layout="vertical"
-                    margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(217, 33%, 18%)" horizontal vertical={false} />
-                    <XAxis
-                      type="number"
-                      stroke="hsl(215, 20%, 55%)"
-                      fontSize={12}
-                      tickLine={false}
-                      tickFormatter={(value) => `$${(value / 1000).toFixed(1)}B`}
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      stroke="hsl(215, 20%, 55%)"
-                      fontSize={11}
-                      tickLine={false}
-                      width={75}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar
-                      dataKey="value"
-                      radius={[0, 4, 4, 0]}
-                      cursor="pointer"
-                      onClick={(data, index) => handleSubSegmentClick(data, index)}
-                    >
-                      {subSegmentBarData.map((_, index) => (
-                        <Cell
-                          key={`bar-${index}`}
-                          fill={subSegmentColors[index % subSegmentColors.length]}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <p className="mt-2 text-center text-xs text-muted-foreground">
-                Click any bar to see detailed trends
-              </p>
-            </motion.div>
-          )}
-
           {/* Year-over-Year Comparison Table */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.3 }}
             className="rounded-lg border border-border bg-secondary/20 p-4"
           >
             <h4 className="mb-4 text-sm font-semibold text-foreground">Year-over-Year Data</h4>
@@ -324,7 +185,7 @@ export function DrillDownModal({
                   </tr>
                 </thead>
                 <tbody>
-                  {(drillLevel === 0 ? segmentData : selectedSubSegment?.data ?? []).map((item, idx, arr) => {
+                  {(segmentData ?? []).map((item, idx, arr) => {
                     const prevValue = idx > 0 ? arr[idx - 1].value : null;
                     const change = prevValue ? ((item.value - prevValue) / prevValue) * 100 : null;
                     return (
