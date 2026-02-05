@@ -149,12 +149,12 @@ export function StackedBarChart({
         />
       </div>
 
-      <div className="h-[200px] w-full -mx-2 sm:mx-0">
+      <div className="h-[200px] w-full -mx-4 sm:mx-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
             layout="vertical"
-            margin={{ top: 10, right: 15, left: 60, bottom: 10 }}
+            margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
           >
             <CartesianGrid
               strokeDasharray="3 3"
@@ -171,9 +171,9 @@ export function StackedBarChart({
             <YAxis
               type="category"
               dataKey="name"
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
               axisLine={{ stroke: "hsl(var(--border))" }}
-              width={95}
+              width={75}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted)/0.1)" }} />
             {segmentNames.map((segmentName, index) => (
