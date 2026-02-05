@@ -82,20 +82,20 @@ export function MarketOverviewChart({
 
   const renderLegend = () => {
     return (
-      <div className="mt-4 flex flex-wrap justify-center gap-6">
-        <div className="flex items-center gap-2">
+      <div className="mt-3 sm:mt-4 flex flex-wrap justify-center gap-3 sm:gap-6">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <div
-            className="h-3 w-3 rounded-full"
+            className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full flex-shrink-0"
             style={{ backgroundColor: "hsl(192, 95%, 55%)" }}
           />
-          <span className="text-sm text-muted-foreground">Market Size (US$ Millions)</span>
+          <span className="text-xs sm:text-sm text-muted-foreground">Market Size (US$ M)</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <div
-            className="h-3 w-3 rounded-full"
+            className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full flex-shrink-0"
             style={{ backgroundColor: "hsl(38, 92%, 55%)" }}
           />
-          <span className="text-sm text-muted-foreground">YoY Growth (%)</span>
+          <span className="text-xs sm:text-sm text-muted-foreground">YoY Growth (%)</span>
         </div>
       </div>
     );
@@ -121,9 +121,9 @@ export function MarketOverviewChart({
         />
       </div>
 
-      <div className="h-[350px] w-full">
+      <div className="h-[300px] sm:h-[350px] w-full -mx-2 sm:mx-0">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 10, right: 60, left: 0, bottom: 0 }}>
+          <ComposedChart data={chartData} margin={{ top: 10, right: 35, left: -15, bottom: 0 }}>
             <defs>
               <linearGradient id="gradient-market-size" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="hsl(192, 95%, 55%)" stopOpacity={0.4} />
