@@ -69,9 +69,9 @@ export function DrillDownModal({
     if (active && payload && payload.length) {
       return (
         <div className="rounded-lg border border-border bg-popover p-3 shadow-lg">
-          <p className="mb-1 font-semibold text-foreground">{label}</p>
+          <p className="mb-1 font-semibold text-foreground">2025 Market Size</p>
           <p className="text-sm text-muted-foreground">
-            Value:{" "}
+            {payload[0].payload?.name || label}:{" "}
             <span className="font-mono font-medium text-foreground">
               ${payload[0].value.toLocaleString()}M
             </span>
