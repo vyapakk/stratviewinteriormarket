@@ -46,7 +46,7 @@ export function DashboardHeader() {
           >
             <div className="h-2 w-2 rounded-full bg-chart-4 animate-pulse" />
             <span className="text-sm text-muted-foreground">
-              Data updated: Q4 2024
+              Data updated: Q1 2026
             </span>
           </motion.div>
         </div>

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, TrendingUp, TrendingDown, ArrowLeft } from "lucide-react";
+import { X, TrendingUp, ArrowLeft } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  Cell,
 } from "recharts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -49,17 +50,9 @@ export function DrillDownModal({
   const barChartRef = useRef<HTMLDivElement>(null);
   const { downloadChart } = useChartDownload();
 
-  const currentValue = segmentData.find((d) => d.year === 2024)?.value ?? 0;
+  const currentValue = segmentData.find((d) => d.year === 2025)?.value ?? 0;
   const forecastValue = segmentData.find((d) => d.year === 2034)?.value ?? 0;
-  const cagr = calculateCAGR(currentValue, forecastValue, 10);
-  const yoyChange = (() => {
-    const v2024 = segmentData.find((d) => d.year === 2024)?.value ?? 0;
-    const v2023 = segmentData.find((d) => d.year === 2023)?.value ?? 0;
-    return v2023 > 0 ? ((v2024 - v2023) / v2023) * 100 : 0;
-  })();
-
-  const historicalData = segmentData.filter((d) => d.year <= 2024);
-  const forecastData = segmentData.filter((d) => d.year >= 2024);
+  const cagr = calculateCAGR(currentValue, forecastValue, 9);
 
   const subSegmentColors = [
     "hsl(192, 95%, 55%)",
@@ -116,7 +109,7 @@ export function DrillDownModal({
   // Prepare sub-segment bar data
   const subSegmentBarData = relatedSegments?.data.map((seg) => ({
     name: seg.name,
-    value: seg.data.find((d) => d.year === 2024)?.value ?? 0,
+    value: seg.data.find((d) => d.year === 2025)?.value ?? 0,
   })) ?? [];
 
   return (
@@ -146,15 +139,15 @@ export function DrillDownModal({
 
         <div className="space-y-6">
           {/* KPI Summary */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="rounded-lg border border-border bg-secondary/30 p-4"
             >
-              <p className="text-xs text-muted-foreground">2024 Value</p>
+              <p className="text-xs text-muted-foreground">2025 Market Size</p>
               <p className="text-xl font-bold text-foreground">
-                ${((drillLevel === 0 ? currentValue : selectedSubSegment?.data.find(d => d.year === 2024)?.value ?? 0) / 1000).toFixed(2)}B
+                ${((drillLevel === 0 ? currentValue : selectedSubSegment?.data.find(d => d.year === 2025)?.value ?? 0) / 1000).toFixed(2)}B
               </p>
             </motion.div>
             <motion.div
@@ -174,49 +167,18 @@ export function DrillDownModal({
               transition={{ delay: 0.2 }}
               className="rounded-lg border border-border bg-secondary/30 p-4"
             >
-              <p className="text-xs text-muted-foreground">10Y CAGR</p>
+              <p className="text-xs text-muted-foreground">CAGR through 2034</p>
               <div className="flex items-center gap-1">
                 <p className="text-xl font-bold text-chart-4">
                   {drillLevel === 0 
                     ? cagr.toFixed(1) 
                     : calculateCAGR(
-                        selectedSubSegment?.data.find(d => d.year === 2024)?.value ?? 0,
+                        selectedSubSegment?.data.find(d => d.year === 2025)?.value ?? 0,
                         selectedSubSegment?.data.find(d => d.year === 2034)?.value ?? 0,
-                        10
+                        9
                       ).toFixed(1)}%
                 </p>
                 <TrendingUp className="h-4 w-4 text-chart-4" />
-              </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="rounded-lg border border-border bg-secondary/30 p-4"
-            >
-              <p className="text-xs text-muted-foreground">YoY Growth</p>
-              <div className="flex items-center gap-1">
-                {(() => {
-                  const change = drillLevel === 0 
-                    ? yoyChange 
-                    : (() => {
-                        const v24 = selectedSubSegment?.data.find(d => d.year === 2024)?.value ?? 0;
-                        const v23 = selectedSubSegment?.data.find(d => d.year === 2023)?.value ?? 0;
-                        return v23 > 0 ? ((v24 - v23) / v23) * 100 : 0;
-                      })();
-                  return (
-                    <>
-                      <p className={`text-xl font-bold ${change >= 0 ? "text-chart-4" : "text-destructive"}`}>
-                        {change >= 0 ? "+" : ""}{change.toFixed(1)}%
-                      </p>
-                      {change >= 0 ? (
-                        <TrendingUp className="h-4 w-4 text-chart-4" />
-                      ) : (
-                        <TrendingDown className="h-4 w-4 text-destructive" />
-                      )}
-                    </>
-                  );
-                })()}
               </div>
             </motion.div>
           </div>
@@ -329,10 +291,9 @@ export function DrillDownModal({
                       onClick={(data, index) => handleSubSegmentClick(data, index)}
                     >
                       {subSegmentBarData.map((_, index) => (
-                        <motion.rect
+                        <Cell
                           key={`bar-${index}`}
                           fill={subSegmentColors[index % subSegmentColors.length]}
-                          whileHover={{ opacity: 0.8 }}
                         />
                       ))}
                     </Bar>

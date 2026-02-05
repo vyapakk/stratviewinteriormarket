@@ -72,7 +72,7 @@ export function MarketOverviewTab({
           accentColor="primary"
         />
         <KPICard
-          title="10-Year CAGR"
+          title="CAGR through 2034"
           value={cagr2024to2034}
           prefix=""
           suffix="%"
