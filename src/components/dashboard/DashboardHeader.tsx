@@ -29,7 +29,7 @@ export function DashboardHeader() {
               <img src={stratviewLogoWhite} alt="Stratview Research" className="h-20 w-auto" />
             </motion.div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground md:text-3xl">
+              <h1 className="font-bold text-foreground md:text-3xl text-lg">
                 Aircraft Interiors Market
               </h1>
               <p className="text-sm text-muted-foreground md:text-base">
