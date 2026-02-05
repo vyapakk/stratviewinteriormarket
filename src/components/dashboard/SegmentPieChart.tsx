@@ -21,14 +21,14 @@ interface SegmentPieChartProps {
 }
 
 const chartColors = [
-  "hsl(192, 95%, 55%)",
-  "hsl(38, 92%, 55%)",
-  "hsl(262, 83%, 58%)",
-  "hsl(142, 71%, 45%)",
-  "hsl(346, 77%, 50%)",
-  "hsl(199, 89%, 48%)",
-  "hsl(280, 65%, 60%)",
-  "hsl(60, 70%, 50%)",
+  "hsl(192, 95%, 55%)",  // Cyan - Seats
+  "hsl(38, 92%, 55%)",   // Amber - IFEC
+  "hsl(142, 71%, 45%)",  // Green - Galleys
+  "hsl(280, 65%, 60%)",  // Purple - Cabin Linings
+  "hsl(346, 77%, 50%)",  // Rose - Stowages
+  "hsl(199, 89%, 48%)",  // Sky Blue - Floor Panels
+  "hsl(25, 95%, 55%)",   // Orange - Lavatories (distinct from Galleys)
+  "hsl(60, 70%, 50%)",   // Yellow - Others
 ];
 
 export function SegmentPieChart({ data, year, title, onSegmentClick }: SegmentPieChartProps) {

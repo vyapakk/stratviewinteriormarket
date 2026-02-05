@@ -296,7 +296,13 @@ export function SegmentDetailTab({
       return { title: "Aircraft Types by Application", data: marketData.aircraftType };
     }
     if (segmentType === "equipment") {
-      return { title: "End Users by Equipment", data: marketData.endUser };
+      // Use regional breakdown for equipment from the dataset
+      const shortName = segmentName.includes("BFE") ? "BFE" : "SFE";
+      const regionalData = marketData.equipmentByRegion?.[shortName];
+      if (regionalData) {
+        return { title: `Regions for ${shortName}`, data: regionalData };
+      }
+      return { title: "Regions", data: marketData.region };
     }
     return undefined;
   };

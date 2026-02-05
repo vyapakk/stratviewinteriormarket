@@ -56,6 +56,8 @@ export function MarketTrendChart({
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      // Calculate total from all payload entries
+      const total = payload.reduce((sum: number, entry: any) => sum + (entry.value || 0), 0);
       return (
         <div className="rounded-lg border border-border bg-popover p-4 shadow-lg">
           <p className="mb-2 font-semibold text-foreground">{label}</p>
@@ -71,6 +73,15 @@ export function MarketTrendChart({
               </span>
             </div>
           ))}
+          {payload.length > 1 && (
+            <div className="mt-2 border-t border-border pt-2 flex items-center gap-2 text-sm">
+              <div className="h-3 w-3 rounded-full bg-foreground/50" />
+              <span className="text-muted-foreground font-medium">Total:</span>
+              <span className="font-mono font-bold text-foreground">
+                ${total.toLocaleString()}M
+              </span>
+            </div>
+          )}
           {showSegments && segments && (
             <p className="mt-2 text-xs text-primary flex items-center gap-1">
               <MousePointer2 className="h-3 w-3" /> Click legend to drill down
