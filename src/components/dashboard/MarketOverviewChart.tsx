@@ -123,7 +123,7 @@ export function MarketOverviewChart({
 
       <div className="h-[300px] sm:h-[350px] w-full -mx-2 sm:mx-0">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 10, right: 45, left: 5, bottom: 0 }}>
+          <ComposedChart data={chartData} margin={{ top: 10, right: 30, left: 5, bottom: 0 }}>
             <defs>
               <linearGradient id="gradient-market-size" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="hsl(192, 95%, 55%)" stopOpacity={0.4} />
@@ -153,7 +153,7 @@ export function MarketOverviewChart({
               tickLine={false}
               tickFormatter={(value) => `${value.toFixed(0)}%`}
               domain={[-45, 30]}
-              width={35}
+              width={30}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend content={renderLegend} />
