@@ -547,7 +547,6 @@ export function SegmentDetailTab({
         segmentName={drillDownState.segmentName}
         segmentData={drillDownState.segmentData}
         color={drillDownState.color}
-        relatedSegments={drillDownState.relatedSegments}
       />
     </div>
   );
