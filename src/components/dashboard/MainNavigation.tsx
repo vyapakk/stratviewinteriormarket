@@ -42,14 +42,13 @@ export function MainNavigation({
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
-                <TabsTrigger
+              <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2 px-4 py-2"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2 px-3 sm:px-4 py-2"
                 >
                   <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  <span className="sm:hidden">{tab.label.split("-")[0]}</span>
+                  <span className="text-xs sm:text-sm">{tab.label}</span>
                 </TabsTrigger>
               );
             })}
