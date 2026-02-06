@@ -9,6 +9,7 @@ import { MarketOverviewTab } from "@/pages/tabs/MarketOverviewTab";
 import { SegmentDetailTab } from "@/pages/tabs/SegmentDetailTab";
 import { useMarketData } from "@/hooks/useMarketData";
 import { Button } from "@/components/ui/button";
+import { ScrollToTop } from "@/components/dashboard/ScrollToTop";
 const Index = () => {
   const [selectedYear, setSelectedYear] = useState(2025);
   const [activeTab, setActiveTab] = useState<MainTabType>("overview");
@@ -82,6 +83,7 @@ const Index = () => {
     return <SegmentDetailTab segmentType={activeTab} segmentData={segmentInfo.data} totalMarket={marketData.totalMarket} marketData={marketData} title={segmentInfo.title} selectedYear={selectedYear} />;
   };
   return <div className="min-h-screen">
+      <ScrollToTop />
       <DashboardHeader />
 
       <main className="container mx-auto px-4 py-8">
